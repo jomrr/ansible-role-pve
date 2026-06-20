@@ -1,0 +1,8 @@
+---
+- name: "PVE | Remove installed unsafe legacy packages"
+  ansible.builtin.package:
+    name: "{{ __pve_hardening_installed_absent_packages }}"
+    state: absent
+  vars:
+    __pve_hardening_installed_absent_packages: "{{ pve_hardening_absent_packages | intersect(pve_package_names | default([])) | list }}"
+  when: __pve_hardening_installed_absent_packages | length > 0

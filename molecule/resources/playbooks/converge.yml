@@ -1,0 +1,9 @@
+---
+# role: pve
+# file: molecule/resources/playbooks/converge.yml
+
+- name: "Molecule | converge | pve"
+  hosts: all
+  gather_facts: true
+  roles:
+    - role: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"

@@ -1,0 +1,126 @@
+---
+- name: "PVE | Collect package facts"
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: "PVE | Collect service facts"
+  ansible.builtin.service_facts:
+
+- name: "PVE | Stat PVE filesystem markers"
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  register: __pve_marker_stats
+  loop:
+    - /etc/pve
+    - /etc/pve/local
+    - /usr/bin/pveversion
+
+- name: "PVE | Stat no-subscription JavaScript candidates"
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  register: __pve_nag_candidate_stats
+  loop: "{{ pve_no_subscription_nag_candidate_paths }}"
+
+- name: "PVE | Set base detection facts"
+  ansible.builtin.set_fact:
+    pve_is_container: "{{ __pve_virtualization_type in __pve_container_types }}"
+    pve_package_names: "{{ ansible_facts.packages.keys() | list }}"
+    pve_service_names: "{{ ansible_facts.services.keys() | list }}"
+    pve_mounts_by_mount: {}
+    pve_etc_pve_exists: "{{ __pve_marker_stats.results[0].stat.exists | bool }}"
+    pve_etc_pve_local_exists: "{{ __pve_marker_stats.results[1].stat.exists | bool }}"
+    pve_pveversion_exists: "{{ __pve_marker_stats.results[2].stat.exists | bool }}"
+    pve_no_subscription_nag_target_exists: "{{ __pve_nag_candidate_stats.results | selectattr('stat.exists') | list | length > 0 }}"
+    pve_no_subscription_nag_target_path: >-
+      {{ (__pve_nag_candidate_stats.results | selectattr('stat.exists') | map(attribute='item') | list | first)
+        | default(pve_no_subscription_nag_candidate_paths[0]) }}
+  vars:
+    __pve_virtualization_type: "{{ ansible_facts.virtualization_type | default('') }}"
+    __pve_container_types:
+      - container
+      - containerd
+      - docker
+      - lxc
+      - podman
+      - systemd-nspawn
+
+- name: "PVE | Index mount facts by mountpoint"
+  ansible.builtin.set_fact:
+    pve_mounts_by_mount: "{{ pve_mounts_by_mount | combine({item.mount: item}) }}"
+  loop: "{{ ansible_facts.mounts | default([]) }}"
+  loop_control:
+    label: "{{ item.mount }}"
+
+- name: "PVE | Stat tmp.mount unit files"
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  register: __pve_tmp_mount_unit_stats
+  loop:
+    - /etc/systemd/system/tmp.mount
+    - /run/systemd/system/tmp.mount
+    - /usr/lib/systemd/system/tmp.mount
+    - /lib/systemd/system/tmp.mount
+
+- name: "PVE | Set tmp.mount facts"
+  ansible.builtin.set_fact:
+    pve_tmp_mount_active: "{{ __pve_tmp_mount_state in ['active', 'mounted', 'running'] }}"
+    pve_tmp_mount_available: >-
+      {{ ('tmp.mount' in pve_service_names)
+        or (__pve_tmp_mount_unit_stats.results | selectattr('stat.exists') | list | length > 0) }}
+    pve_tmp_mount_masked: "{{ __pve_tmp_mount_status == 'masked' }}"
+  vars:
+    __pve_tmp_mount_service: "{{ ansible_facts.services['tmp.mount'] | default({}) }}"
+    __pve_tmp_mount_state: "{{ __pve_tmp_mount_service.state | default('') }}"
+    __pve_tmp_mount_status: "{{ __pve_tmp_mount_service.status | default('') }}"
+
+- name: "PVE | Set PVE detection facts"
+  ansible.builtin.set_fact:
+    pve_packages_present: "{{ pve_package_names | intersect(__pve_package_markers) | list }}"
+    pve_services_present: "{{ pve_service_names | intersect(__pve_service_markers) | list }}"
+    pve_detected: >-
+      {{ (pve_package_names | intersect(__pve_package_markers) | length > 0)
+        or (pve_service_names | intersect(__pve_service_markers) | length > 0)
+        or pve_etc_pve_exists
+        or pve_pveversion_exists
+        or pve_no_subscription_nag_target_exists }}
+  vars:
+    __pve_package_markers:
+      - proxmox-ve
+      - pve-manager
+      - pve-cluster
+    __pve_service_markers:
+      - pve-cluster.service
+      - pvedaemon.service
+      - pveproxy.service
+      - pvestatd.service
+
+- name: "PVE | Stat HA resources configuration"
+  ansible.builtin.stat:
+    path: /etc/pve/ha/resources.cfg
+  register: __pve_ha_resources_stat
+  when: pve_etc_pve_exists | bool
+
+- name: "PVE | Read HA resources configuration"
+  ansible.builtin.slurp:
+    src: /etc/pve/ha/resources.cfg
+  register: __pve_ha_resources_slurp
+  failed_when: false
+  when:
+    - pve_etc_pve_exists | bool
+    - __pve_ha_resources_stat.stat.exists | default(false) | bool
+
+- name: "PVE | Set HA resources facts"
+  ansible.builtin.set_fact:
+    pve_ha_resources_file_exists: "{{ __pve_ha_resources_stat.stat.exists | default(false) | bool }}"
+    pve_ha_resources_configured: "{{ (__pve_ha_resources_content | regex_replace('(?m)^\\s*#.*$', '') | trim | length) > 0 }}"
+  vars:
+    __pve_ha_resources_content: "{{ __pve_ha_resources_slurp.content | default('') | b64decode }}"
+
+- name: "PVE | Fail when target is not Proxmox VE"
+  ansible.builtin.fail:
+    msg: >-
+      This host does not look like a Proxmox VE node. Set pve_fail_when_not_proxmox to false for Debian container tests
+      or plain Debian dry-runs.
+  when:
+    - pve_fail_when_not_proxmox | bool
+    - not pve_detected | bool

@@ -1,0 +1,43 @@
+---
+# role: pve
+# file: molecule/dev/molecule.yml
+
+dependency:
+  name: "galaxy"
+driver:
+  name: "podman"
+provisioner:
+  name: "ansible"
+  config_options:
+    defaults:
+      forks: 8
+      interpreter_python: "auto_silent"
+      allow_world_readable_tmpfiles: true
+      callbacks_enabled: "ansible.posix.profile_tasks,ansible.posix.timer"
+      callback_result_format: "yaml"
+      remote_tmp: "/tmp/.ansible/tmp"
+    ssh_connection:
+      pipelining: true
+  log: true
+  playbooks:
+    converge: "../resources/playbooks/converge.yml"
+    verify: "../resources/playbooks/verify.yml"
+  inventory:
+    group_vars:
+      all:
+        pve_fail_when_not_proxmox: false
+        pve_no_subscription_nag_enabled: true
+        pve_ha_mask_services: true
+        pve_hardening_enabled: true
+        pve_hardening_profile: "pve_safe"
+        pve_hardening_auditd_enabled: true
+verifier:
+  name: "ansible"
+scenario:
+  name: "dev"
+platforms:
+  - name: debian-13-pve
+    image: "docker.io/jomrr/molecule-debian:13"
+    pre_build_image: true
+    override_command: false
+    systemd: true

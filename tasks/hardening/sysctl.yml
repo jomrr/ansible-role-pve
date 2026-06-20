@@ -1,0 +1,17 @@
+---
+- name: "PVE | Ensure sysctl configuration directory exists"
+  ansible.builtin.file:
+    path: "{{ pve_hardening_sysctl_config_path | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: "PVE | Install sysctl hardening configuration"
+  ansible.builtin.template:
+    src: sysctl-pve-hardening.conf.j2
+    dest: "{{ pve_hardening_sysctl_config_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: pve apply sysctl hardening

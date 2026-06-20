@@ -1,0 +1,22 @@
+---
+- name: "PVE | Assert supported inputs"
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.os_family | default('') == 'Debian'
+      - pve_hardening_profile in ['pve_safe']
+      - (__pve_requested_ha_services | intersect(__pve_allowed_ha_services) | length) == (__pve_requested_ha_services | length)
+      - pve_hardening_sshd_permit_root_login in __pve_sshd_permit_root_login_values
+    fail_msg: >-
+      The pve role supports Debian targets, the pve_safe hardening profile, and only the explicitly allowed PVE HA services.
+  vars:
+    __pve_requested_ha_services: "{{ pve_ha_services | default([]) }}"
+    __pve_allowed_ha_services:
+      - pve-ha-lrm.service
+      - pve-ha-crm.service
+      - watchdog-mux.service
+    __pve_sshd_permit_root_login_values:
+      - "yes"
+      - prohibit-password
+      - forced-commands-only
+      - "no"
+      - without-password

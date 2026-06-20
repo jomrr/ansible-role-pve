@@ -1,0 +1,153 @@
+---
+# role: pve
+# file: meta/argument_specs.yml
+
+argument_specs:
+  main:
+    short_description: Manage Proxmox VE nodes and clusters
+    description:
+      - Installs a no-subscription warning suppression hook for Proxmox VE package updates.
+      - Masks Proxmox VE HA services on nodes that are intentionally not running HA resources.
+      - Applies Debian CIS Level 2 inspired host hardening that is safe for Proxmox VE,
+        KVM, LXC, and cluster operation.
+      - Skips real PVE-only actions cleanly when the target is a Debian test container without
+        Proxmox VE installed.
+    options:
+      pve_fail_when_not_proxmox:
+        type: bool
+        required: false
+        default: true
+        description: Fail the role when the target does not look like a Proxmox VE node.
+      pve_no_subscription_nag_enabled:
+        type: bool
+        required: false
+        default: true
+        description: Install the Proxmox VE no-subscription warning suppression script and
+          APT hook.
+      pve_ha_mask_services:
+        type: bool
+        required: false
+        default: true
+        description: Stop, disable, and mask selected Proxmox VE HA services when PVE is
+          detected.
+      pve_ha_force_mask:
+        type: bool
+        required: false
+        default: false
+        description: Allow masking HA services even when configured HA resources are detected.
+      pve_ha_services:
+        type: list
+        elements: str
+        required: false
+        default:
+          - pve-ha-lrm.service
+          - pve-ha-crm.service
+          - watchdog-mux.service
+        description: Proxmox VE HA systemd units managed by the role.
+      pve_hardening_enabled:
+        type: bool
+        required: false
+        default: true
+        description: Enable PVE-safe host hardening tasks.
+      pve_hardening_profile:
+        type: str
+        required: false
+        default: pve_safe
+        choices:
+          - pve_safe
+        description: Hardening profile to apply.
+      pve_hardening_disable_usb_storage:
+        type: bool
+        required: false
+        default: false
+        description: Blacklist usb-storage. This is opt-in because removable media may be
+          operationally required.
+      pve_hardening_disable_overlayfs:
+        type: bool
+        required: false
+        default: false
+        description: Blacklist overlayfs. This is opt-in because it can affect container
+          workflows.
+      pve_hardening_disable_squashfs:
+        type: bool
+        required: false
+        default: false
+        description: Blacklist squashfs. This is opt-in because some operational workflows
+          use squashfs images.
+      pve_hardening_auditd_enabled:
+        type: bool
+        required: false
+        default: true
+        description: Install and enable auditd on non-container hosts.
+      pve_hardening_auditd_halt_on_full:
+        type: bool
+        required: false
+        default: false
+        description: Halt the host when audit storage is full. Disabled by default for availability.
+      pve_hardening_audit_immutable:
+        type: bool
+        required: false
+        default: false
+        description: Make audit rules immutable until reboot. Disabled by default for operational
+          safety.
+      pve_hardening_sshd_manage:
+        type: bool
+        required: false
+        default: true
+        description: Manage a small PVE-safe sshd hardening drop-in.
+      pve_hardening_sshd_permit_root_login:
+        type: str
+        required: false
+        default: prohibit-password
+        description: Value for sshd PermitRootLogin in the managed drop-in.
+      pve_hardening_sshd_disable_forwarding:
+        type: bool
+        required: false
+        default: false
+        description: Set sshd DisableForwarding yes. Disabled by default to avoid breaking
+          administrative workflows.
+      pve_hardening_tmp_acl_enabled:
+        type: bool
+        required: false
+        default: true
+        description: Ensure shared temporary directories have root ownership and the sticky
+          bit where appropriate.
+      pve_hardening_mounts_enabled:
+        type: bool
+        required: false
+        default: true
+        description: Enable conservative mountpoint hardening for existing safe mountpoints.
+      pve_hardening_dev_shm_noexec:
+        type: bool
+        required: false
+        default: true
+        description: Ensure noexec is part of the /dev/shm mount hardening policy on real
+          hosts.
+      pve_hardening_kernel_cmdline_enabled:
+        type: bool
+        required: false
+        default: false
+        description: Add supported kernel command line hardening arguments. Disabled by
+          default for module compatibility.
+      pve_hardening_kernel_cmdline_include_base:
+        type: bool
+        required: false
+        default: true
+        description: Include the base kernel command line hardening argument set when cmdline
+          hardening is enabled.
+      pve_hardening_kernel_cmdline_include_metal:
+        type: bool
+        required: false
+        default: true
+        description: Include physical-host IOMMU hardening arguments when cmdline hardening
+          is enabled.
+      pve_hardening_kernel_cmdline_include_cpu_vendor:
+        type: bool
+        required: false
+        default: true
+        description: Include Intel or AMD IOMMU arguments based on the detected CPU vendor.
+      pve_hardening_kernel_cmdline_reboot_required:
+        type: bool
+        required: false
+        default: true
+        description: Report that a reboot is required after kernel command line changes.

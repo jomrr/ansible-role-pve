@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+nag_file="${PVE_NAG_FILE:-/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js}"
+marker="pve-disable-subscription-nag managed patch"
+
+if [[ ! -f "${nag_file}" ]]; then
+    printf 'skipped: %s not found\n' "${nag_file}"
+    exit 0
+fi
+
+if grep -Fq "${marker}" "${nag_file}"; then
+    printf 'already patched: %s\n' "${nag_file}"
+    exit 0
+fi
+
+tmp_file="$(mktemp "${nag_file}.XXXXXX")"
+marked_file="${tmp_file}.marked"
+cleanup() {
+    rm -f "${tmp_file}" "${marked_file}"
+}
+trap cleanup EXIT
+
+cp -p "${nag_file}" "${tmp_file}"
+patched=0
+
+if grep -Fq "res.data.status.toLowerCase() !== 'active'" "${tmp_file}"; then
+    sed -i "s/res\\.data\\.status\\.toLowerCase() !== 'active'/false/g" "${tmp_file}"
+    patched=1
+fi
+
+if grep -Fq "data.status !== 'Active'" "${tmp_file}"; then
+    sed -i "s/data\\.status !== 'Active'/false/g" "${tmp_file}"
+    patched=1
+fi
+
+if [[ "${patched}" -eq 0 ]]; then
+    printf 'skipped: no known subscription warning pattern found in %s\n' "${nag_file}"
+    exit 0
+fi
+
+{
+    printf '// %s\n' "${marker}"
+    cat "${tmp_file}"
+} > "${marked_file}"
+
+cat "${marked_file}" > "${nag_file}"
+printf 'patched: %s\n' "${nag_file}"

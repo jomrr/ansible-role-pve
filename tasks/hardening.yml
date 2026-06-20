@@ -1,0 +1,29 @@
+---
+- name: "PVE | Apply package hardening"
+  ansible.builtin.import_tasks: hardening/packages.yml
+
+- name: "PVE | Apply kernel module hardening"
+  ansible.builtin.import_tasks: hardening/kernel_modules.yml
+
+- name: "PVE | Apply sysctl hardening"
+  ansible.builtin.import_tasks: hardening/sysctl.yml
+
+- name: "PVE | Apply sshd hardening"
+  ansible.builtin.import_tasks: hardening/sshd.yml
+  when: pve_hardening_sshd_manage | bool
+
+- name: "PVE | Apply auditd hardening"
+  ansible.builtin.import_tasks: hardening/auditd.yml
+  when: pve_hardening_auditd_enabled | bool
+
+- name: "PVE | Apply temporary directory ACL hardening"
+  ansible.builtin.import_tasks: hardening/filesystems.yml
+  when: pve_hardening_tmp_acl_enabled | bool
+
+- name: "PVE | Apply mountpoint hardening"
+  ansible.builtin.import_tasks: hardening/mounts.yml
+  when: pve_hardening_mounts_enabled | bool
+
+- name: "PVE | Apply kernel command line hardening"
+  ansible.builtin.import_tasks: hardening/kernel_cmdline.yml
+  when: pve_hardening_kernel_cmdline_enabled | bool

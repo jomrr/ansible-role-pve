@@ -1,0 +1,53 @@
+---
+- name: "PVE | Install auditd packages"
+  ansible.builtin.package:
+    name: "{{ pve_hardening_auditd_packages }}"
+    state: present
+
+- name: "PVE | Configure auditd storage actions"
+  ansible.builtin.lineinfile:
+    path: /etc/audit/auditd.conf
+    regexp: "^{{ item.key }}\\s*="
+    line: "{{ item.key }} = {{ item.value }}"
+    owner: root
+    group: root
+    mode: "0640"
+  loop:
+    - key: space_left_action
+      value: SYSLOG
+    - key: admin_space_left_action
+      value: "{{ 'HALT' if pve_hardening_auditd_halt_on_full | bool else 'SUSPEND' }}"
+    - key: disk_full_action
+      value: "{{ 'HALT' if pve_hardening_auditd_halt_on_full | bool else 'SUSPEND' }}"
+    - key: disk_error_action
+      value: "{{ 'HALT' if pve_hardening_auditd_halt_on_full | bool else 'SYSLOG' }}"
+  notify: pve load audit rules
+
+- name: "PVE | Install audit rules"
+  ansible.builtin.copy:
+    dest: "{{ pve_hardening_auditd_rules_path }}"
+    owner: root
+    group: root
+    mode: "0640"
+    content: |
+      ## Ansible managed: PVE-safe audit rules
+      -w /etc/group -p wa -k identity
+      -w /etc/passwd -p wa -k identity
+      -w /etc/gshadow -p wa -k identity
+      -w /etc/shadow -p wa -k identity
+      -w /etc/security/opasswd -p wa -k identity
+      -w /etc/sudoers -p wa -k scope
+      -w /etc/sudoers.d -p wa -k scope
+      -w /var/log/faillog -p wa -k logins
+      -w /var/log/lastlog -p wa -k logins
+      {% if pve_hardening_audit_immutable | bool %}
+      -e 2
+      {% endif %}
+  notify: pve load audit rules
+
+- name: "PVE | Enable and start auditd on real hosts"
+  ansible.builtin.systemd_service:
+    name: auditd.service
+    enabled: true
+    state: started
+  when: not pve_is_container | bool

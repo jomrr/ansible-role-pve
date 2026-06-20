@@ -1,0 +1,5 @@
+# Ansible managed: PVE-safe sshd hardening.
+PermitRootLogin {{ pve_hardening_sshd_permit_root_login }}
+{% if pve_hardening_sshd_disable_forwarding | bool %}
+DisableForwarding yes
+{% endif %}

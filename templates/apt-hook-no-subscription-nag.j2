@@ -1,0 +1,3 @@
+// Ansible managed: re-apply the PVE no-subscription warning suppression after package changes.
+DPkg::Post-Invoke { "{{ pve_no_subscription_nag_script_path }} || true"; };
+APT::Update::Post-Invoke-Success { "{{ pve_no_subscription_nag_script_path }} || true"; };

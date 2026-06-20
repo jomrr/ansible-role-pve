@@ -1,0 +1,41 @@
+---
+# Conservative public policy defaults for Proxmox VE node management.
+pve_fail_when_not_proxmox: true
+
+# Install a persistent no-subscription warning suppression hook.
+pve_no_subscription_nag_enabled: true
+
+# HA services are only masked after PVE detection and HA resource checks.
+pve_ha_mask_services: true
+pve_ha_force_mask: false
+pve_ha_services:
+  - pve-ha-lrm.service
+  - pve-ha-crm.service
+  - watchdog-mux.service
+
+# PVE-safe hardening profile. Risky controls stay opt-in.
+pve_hardening_enabled: true
+pve_hardening_profile: pve_safe
+pve_hardening_disable_usb_storage: false
+pve_hardening_disable_overlayfs: false
+pve_hardening_disable_squashfs: false
+pve_hardening_auditd_enabled: true
+pve_hardening_auditd_halt_on_full: false
+pve_hardening_audit_immutable: false
+pve_hardening_sshd_manage: true
+pve_hardening_sshd_permit_root_login: prohibit-password
+pve_hardening_sshd_disable_forwarding: false
+
+# Directory permission hygiene for shared temporary paths.
+pve_hardening_tmp_acl_enabled: true
+
+# Mountpoint hardening avoids PVE storage paths and keeps /tmp and /var/tmp executable.
+pve_hardening_mounts_enabled: true
+pve_hardening_dev_shm_noexec: true
+
+# Kernel cmdline hardening can block unsigned third-party modules, so it is opt-in.
+pve_hardening_kernel_cmdline_enabled: false
+pve_hardening_kernel_cmdline_include_base: true
+pve_hardening_kernel_cmdline_include_metal: true
+pve_hardening_kernel_cmdline_include_cpu_vendor: true
+pve_hardening_kernel_cmdline_reboot_required: true

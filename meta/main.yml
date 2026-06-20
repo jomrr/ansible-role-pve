@@ -1,0 +1,19 @@
+---
+# role: pve
+# file: meta/main.yml
+
+galaxy_info:
+  author: Jonas Mauer
+  description: Ansible role for managing Proxmox VE nodes and clusters.
+  galaxy_tags:
+    - ansible
+    - debian
+    - hardening
+    - proxmox
+    - pve
+    - virtualization
+  issue_tracker_url: https://github.com/jomrr/ansible-role-pve/issues
+  license: MIT
+  min_ansible_version: "2.20"
+  namespace: jomrr
+  role_name: pve
