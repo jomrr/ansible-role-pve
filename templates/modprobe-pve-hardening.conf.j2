@@ -1,5 +1,5 @@
 # Ansible managed: PVE-safe kernel module hardening.
-{% for module in __pve_hardening_kernel_modules | default(pve_hardening_kernel_modules) | sort %}
+{% for module in __pve_hardening_kernel_module_blacklist | sort %}
 blacklist {{ module }}
 install {{ module }} /bin/false
 {% endfor %}

@@ -50,7 +50,7 @@
 
 - name: "PVE | Ensure no-subscription script directory exists"
   ansible.builtin.file:
-    path: "{{ pve_no_subscription_nag_script_path | dirname }}"
+    path: "{{ __pve_no_subscription_nag_script_path | dirname }}"
     state: directory
     owner: root
     group: root
@@ -59,14 +59,14 @@
 - name: "PVE | Install no-subscription warning suppression script"
   ansible.builtin.template:
     src: no-subscription-nag.sh.j2
-    dest: "{{ pve_no_subscription_nag_script_path }}"
+    dest: "{{ __pve_no_subscription_nag_script_path }}"
     owner: root
     group: root
     mode: "0755"
 
 - name: "PVE | Ensure APT hook directory exists"
   ansible.builtin.file:
-    path: "{{ pve_no_subscription_nag_apt_hook_path | dirname }}"
+    path: "{{ __pve_no_subscription_nag_apt_hook_path | dirname }}"
     state: directory
     owner: root
     group: root
@@ -75,7 +75,7 @@
 - name: "PVE | Install no-subscription warning APT hook"
   ansible.builtin.template:
     src: apt-hook-no-subscription-nag.j2
-    dest: "{{ pve_no_subscription_nag_apt_hook_path }}"
+    dest: "{{ __pve_no_subscription_nag_apt_hook_path }}"
     owner: root
     group: root
     mode: "0644"
@@ -83,7 +83,7 @@
 - name: "PVE | Run no-subscription warning suppression when PVE files exist"
   ansible.builtin.command:
     argv:
-      - "{{ pve_no_subscription_nag_script_path }}"
+      - "{{ __pve_no_subscription_nag_script_path }}"
   environment:
     PVE_NAG_FILE: "{{ __pve_no_subscription_nag_target_path }}"
   register: __pve_no_subscription_run

@@ -4,15 +4,15 @@
 
 - name: "PVE | Build kernel module blacklist"
   ansible.builtin.set_fact:
-    __pve_hardening_kernel_modules: >-
-      {{ (pve_hardening_kernel_modules
+    __pve_hardening_kernel_module_blacklist: >-
+      {{ (__pve_hardening_kernel_modules
         + (['squashfs'] if pve_hardening_disable_squashfs | bool else [])
         + (['overlay'] if pve_hardening_disable_overlayfs | bool else [])
         + (['usb-storage'] if pve_hardening_disable_usb_storage | bool else [])) | unique | list }}
 
 - name: "PVE | Ensure kernel module configuration directory exists"
   ansible.builtin.file:
-    path: "{{ pve_hardening_modprobe_path | dirname }}"
+    path: "{{ __pve_hardening_modprobe_path | dirname }}"
     state: directory
     owner: root
     group: root
@@ -21,7 +21,7 @@
 - name: "PVE | Install kernel module hardening configuration"
   ansible.builtin.template:
     src: modprobe-pve-hardening.conf.j2
-    dest: "{{ pve_hardening_modprobe_path }}"
+    dest: "{{ __pve_hardening_modprobe_path }}"
     owner: root
     group: root
     mode: "0644"

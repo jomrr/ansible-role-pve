@@ -10,16 +10,30 @@
 - name: "PVE | Manage kernel command line hardening"
   when: not __pve_is_container | bool
   block:
-    - name: "PVE | Stat kernel command line integration paths"
+    - name: "PVE | Stat proxmox kernel command line file"
       ansible.builtin.stat:
-        path: "{{ item }}"
-      register: __pve_kernel_cmdline_path_stats
-      loop:
-        - "{{ pve_hardening_kernel_cmdline_path }}"
-        - "{{ pve_hardening_kernel_cmdline_proxmox_boot_uuids_path }}"
-        - "{{ pve_hardening_kernel_cmdline_proxmox_boot_tool_path }}"
-        - "{{ pve_hardening_kernel_cmdline_update_grub_path }}"
-        - /etc/default/grub
+        path: "{{ __pve_kernel_cmdline_path }}"
+      register: __pve_kernel_cmdline_file_stat
+
+    - name: "PVE | Stat proxmox boot UUID marker"
+      ansible.builtin.stat:
+        path: "{{ __pve_kernel_cmdline_proxmox_boot_uuids_path }}"
+      register: __pve_proxmox_boot_uuids_stat
+
+    - name: "PVE | Stat proxmox boot tool"
+      ansible.builtin.stat:
+        path: "{{ __pve_kernel_cmdline_proxmox_boot_tool_path }}"
+      register: __pve_proxmox_boot_tool_stat
+
+    - name: "PVE | Stat update-grub"
+      ansible.builtin.stat:
+        path: "{{ __pve_kernel_cmdline_update_grub_path }}"
+      register: __pve_update_grub_stat
+
+    - name: "PVE | Stat GRUB defaults"
+      ansible.builtin.stat:
+        path: /etc/default/grub
+      register: __pve_grub_default_stat
 
     - name: "PVE | Read running kernel command line"
       ansible.builtin.slurp:
@@ -28,44 +42,40 @@
 
     - name: "PVE | Read existing kernel command line file"
       ansible.builtin.slurp:
-        src: "{{ pve_hardening_kernel_cmdline_path }}"
+        src: "{{ __pve_kernel_cmdline_path }}"
       register: __pve_kernel_cmdline_slurp
-      when: __pve_kernel_cmdline_path_stats.results[0].stat.exists | bool
+      when: __pve_kernel_cmdline_file_stat.stat.exists | bool
 
     - name: "PVE | Read GRUB defaults"
       ansible.builtin.slurp:
         src: /etc/default/grub
       register: __pve_grub_default_slurp
-      when: __pve_kernel_cmdline_path_stats.results[4].stat.exists | bool
+      when: __pve_grub_default_stat.stat.exists | bool
 
-    - name: "PVE | Build requested kernel command line arguments"
+    - name: "PVE | Select kernel command line target and requested arguments"
       ansible.builtin.set_fact:
         __pve_kernel_cmdline_use_kernel_file: >-
-          {{ (__pve_kernel_cmdline_path_stats.results[0].stat.exists | bool)
-            or (__pve_kernel_cmdline_path_stats.results[1].stat.exists | bool) }}
-        __pve_kernel_cmdline_proxmox_tool_exists: "{{ __pve_kernel_cmdline_path_stats.results[2].stat.exists | bool }}"
-        __pve_kernel_cmdline_update_grub_exists: "{{ __pve_kernel_cmdline_path_stats.results[3].stat.exists | bool }}"
-        __pve_kernel_cmdline_cpu_vendor_args: "{{ __pve_kernel_cmdline_intel_args + __pve_kernel_cmdline_amd_args }}"
+          {{ (__pve_kernel_cmdline_file_stat.stat.exists | bool) or (__pve_proxmox_boot_uuids_stat.stat.exists | bool) }}
         __pve_kernel_cmdline_requested_args: >-
           {{ ((__pve_kernel_cmdline_base_args if pve_hardening_kernel_cmdline_include_base | bool else [])
             + (__pve_kernel_cmdline_metal_args if pve_hardening_kernel_cmdline_include_metal | bool else [])
-            + (__pve_kernel_cmdline_intel_args + __pve_kernel_cmdline_amd_args)) | unique | list }}
+            + (__pve_kernel_cmdline_intel_args
+              if pve_hardening_kernel_cmdline_include_cpu_vendor | bool and 'intel' in __pve_processor_text
+              else [])
+            + (__pve_kernel_cmdline_amd_args
+              if pve_hardening_kernel_cmdline_include_cpu_vendor | bool and 'amd' in __pve_processor_text
+              else []))
+            | unique | list }}
       vars:
         __pve_processor_text: "{{ ansible_facts['processor'] | default([]) | join(' ') | lower }}"
-        __pve_kernel_cmdline_base_args: "{{ pve_hardening_kernel_cmdline_base_args }}"
-        __pve_kernel_cmdline_metal_args: "{{ pve_hardening_kernel_cmdline_metal_args }}"
-        __pve_kernel_cmdline_intel_args: >-
-          {{ pve_hardening_kernel_cmdline_intel_args
-            if pve_hardening_kernel_cmdline_include_cpu_vendor | bool and 'intel' in __pve_processor_text else [] }}
-        __pve_kernel_cmdline_amd_args: >-
-          {{ pve_hardening_kernel_cmdline_amd_args
-            if pve_hardening_kernel_cmdline_include_cpu_vendor | bool and 'amd' in __pve_processor_text else [] }}
 
-    - name: "PVE | Build existing kernel command line arguments"
+    - name: "PVE | Build final kernel command line arguments"
       ansible.builtin.set_fact:
-        __pve_kernel_cmdline_existing_args: >-
-          {{ (__pve_kernel_cmdline_file_args if __pve_kernel_cmdline_use_kernel_file else __pve_grub_default_args)
-            | default(__pve_proc_cmdline_args, true) }}
+        __pve_kernel_cmdline_final_args: >-
+          {{ (((__pve_kernel_cmdline_file_args if __pve_kernel_cmdline_use_kernel_file else __pve_grub_default_args)
+            | default(__pve_proc_cmdline_args, true))
+            + __pve_kernel_cmdline_requested_args)
+            | unique | list }}
       vars:
         __pve_proc_cmdline_args: >-
           {{ (__pve_proc_cmdline_slurp.content | b64decode).split() | reject('match', '^BOOT_IMAGE=') | list }}
@@ -76,32 +86,27 @@
           {{ __pve_grub_content | regex_findall('(?m)^GRUB_CMDLINE_LINUX_DEFAULT="([^"]*)"') | last | default('') }}
         __pve_grub_default_args: "{{ (__pve_grub_default_string.split() or __pve_proc_cmdline_args) }}"
 
-    - name: "PVE | Set final kernel command line"
-      ansible.builtin.set_fact:
-        __pve_kernel_cmdline_final_args: >-
-          {{ (__pve_kernel_cmdline_existing_args + __pve_kernel_cmdline_requested_args) | unique | list }}
-
     - name: "PVE | Assert proxmox boot tool is available"
       ansible.builtin.assert:
         that:
-          - __pve_kernel_cmdline_proxmox_tool_exists
+          - __pve_proxmox_boot_tool_stat.stat.exists
         fail_msg: >-
           proxmox-boot-tool integration was detected, but proxmox-boot-tool is not available at
-          {{ pve_hardening_kernel_cmdline_proxmox_boot_tool_path }}.
+          {{ __pve_kernel_cmdline_proxmox_boot_tool_path }}.
       when: __pve_kernel_cmdline_use_kernel_file | bool
 
     - name: "PVE | Assert update-grub is available"
       ansible.builtin.assert:
         that:
-          - __pve_kernel_cmdline_update_grub_exists
+          - __pve_update_grub_stat.stat.exists
         fail_msg: >-
           GRUB kernel command line hardening was selected, but update-grub is not available at
-          {{ pve_hardening_kernel_cmdline_update_grub_path }}.
+          {{ __pve_kernel_cmdline_update_grub_path }}.
       when: not __pve_kernel_cmdline_use_kernel_file | bool
 
     - name: "PVE | Ensure kernel command line directory exists"
       ansible.builtin.file:
-        path: "{{ pve_hardening_kernel_cmdline_path | dirname }}"
+        path: "{{ __pve_kernel_cmdline_path | dirname }}"
         state: directory
         owner: root
         group: root
@@ -110,7 +115,7 @@
 
     - name: "PVE | Manage proxmox kernel command line"
       ansible.builtin.copy:
-        dest: "{{ pve_hardening_kernel_cmdline_path }}"
+        dest: "{{ __pve_kernel_cmdline_path }}"
         owner: root
         group: root
         mode: "0644"
@@ -121,7 +126,7 @@
 
     - name: "PVE | Ensure GRUB drop-in directory exists"
       ansible.builtin.file:
-        path: "{{ pve_hardening_kernel_cmdline_grub_dropin_dir }}"
+        path: "{{ __pve_kernel_cmdline_grub_dropin_path | dirname }}"
         state: directory
         owner: root
         group: root
@@ -130,7 +135,7 @@
 
     - name: "PVE | Manage GRUB kernel command line drop-in"
       ansible.builtin.copy:
-        dest: "{{ pve_hardening_kernel_cmdline_grub_dropin_path }}"
+        dest: "{{ __pve_kernel_cmdline_grub_dropin_path }}"
         owner: root
         group: root
         mode: "0644"

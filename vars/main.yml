@@ -3,8 +3,8 @@
 # file: vars/main.yml
 
 # Internal implementation details for the pve role.
-pve_no_subscription_nag_script_path: /usr/local/sbin/pve-disable-subscription-nag
-pve_no_subscription_nag_apt_hook_path: /etc/apt/apt.conf.d/99-pve-disable-subscription-nag
+__pve_no_subscription_nag_script_path: /usr/local/sbin/pve-disable-subscription-nag
+__pve_no_subscription_nag_apt_hook_path: /etc/apt/apt.conf.d/99-pve-disable-subscription-nag
 __pve_no_subscription_sources_path: /etc/apt/sources.list.d/proxmox.sources
 __pve_enterprise_sources_path: /etc/apt/sources.list.d/pve-enterprise.sources
 __pve_legacy_no_subscription_list_path: /etc/apt/sources.list.d/pve-no-subscription.list
@@ -55,15 +55,15 @@ __pve_tmp_mount_active_states:
 
 __pve_ha_resources_config_path: /etc/pve/ha/resources.cfg
 
-pve_hardening_absent_packages:
+__pve_hardening_absent_packages:
   - nis
   - rsh-client
   - talk
   - telnet
   - xinetd
 
-pve_hardening_modprobe_path: /etc/modprobe.d/pve-hardening.conf
-pve_hardening_kernel_modules:
+__pve_hardening_modprobe_path: /etc/modprobe.d/pve-hardening.conf
+__pve_hardening_kernel_modules:
   - dccp
   - tipc
   - rds
@@ -75,9 +75,9 @@ pve_hardening_kernel_modules:
   - hfsplus
   - udf
 
-pve_hardening_sysctl_config_path: /etc/sysctl.d/99-pve-hardening.conf
-pve_hardening_sysctl_apply_runtime: true
-pve_hardening_sysctl_values:
+__pve_hardening_sysctl_config_path: /etc/sysctl.d/99-pve-hardening.conf
+__pve_hardening_sysctl_apply_runtime: true
+__pve_hardening_sysctl_values:
   kernel.kptr_restrict: 2
   kernel.dmesg_restrict: 1
   kernel.randomize_va_space: 2
@@ -102,18 +102,18 @@ pve_hardening_sysctl_values:
   net.ipv6.conf.all.accept_source_route: 0
   net.ipv6.conf.default.accept_source_route: 0
 
-pve_hardening_sshd_config_path: /etc/ssh/sshd_config.d/10-pve-hardening.conf
-pve_hardening_sshd_service_name: ssh.service
+__pve_hardening_sshd_config_path: /etc/ssh/sshd_config.d/10-pve-hardening.conf
+__pve_hardening_sshd_service_name: ssh.service
 
-pve_hardening_auditd_packages:
+__pve_hardening_auditd_packages:
   - auditd
-pve_hardening_auditd_rules_path: /etc/audit/rules.d/99-pve-hardening.rules
+__pve_hardening_auditd_rules_path: /etc/audit/rules.d/99-pve-hardening.rules
 
-pve_hardening_tmp_acl_paths:
+__pve_hardening_tmp_acl_paths:
   - /tmp
   - /var/tmp
 
-pve_hardening_mount_policy:
+__pve_hardening_mount_policy:
   /tmp:
     options:
       - nodev
@@ -128,14 +128,13 @@ pve_hardening_mount_policy:
       - nosuid
     noexec_var: pve_hardening_dev_shm_noexec
 
-pve_hardening_kernel_cmdline_path: /etc/kernel/cmdline
-pve_hardening_kernel_cmdline_grub_dropin_dir: /etc/default/grub.d
-pve_hardening_kernel_cmdline_grub_dropin_path: /etc/default/grub.d/10-pve-hardening.cfg
-pve_hardening_kernel_cmdline_proxmox_boot_uuids_path: /etc/kernel/proxmox-boot-uuids
-pve_hardening_kernel_cmdline_proxmox_boot_tool_path: /usr/sbin/proxmox-boot-tool
-pve_hardening_kernel_cmdline_update_grub_path: /usr/sbin/update-grub
+__pve_kernel_cmdline_path: /etc/kernel/cmdline
+__pve_kernel_cmdline_grub_dropin_path: /etc/default/grub.d/10-pve-hardening.cfg
+__pve_kernel_cmdline_proxmox_boot_uuids_path: /etc/kernel/proxmox-boot-uuids
+__pve_kernel_cmdline_proxmox_boot_tool_path: /usr/sbin/proxmox-boot-tool
+__pve_kernel_cmdline_update_grub_path: /usr/sbin/update-grub
 
-pve_hardening_kernel_cmdline_base_args:
+__pve_kernel_cmdline_base_args:
   - mitigations=auto
   - debugfs=off
   - init_on_alloc=1
@@ -150,16 +149,13 @@ pve_hardening_kernel_cmdline_base_args:
   - spec_store_bypass_disable=on
   - vsyscall=none
 
-pve_hardening_kernel_cmdline_metal_args:
+__pve_kernel_cmdline_metal_args:
   - efi=disable_early_pci_dma
   - iommu=force
   - iommu.strict=1
 
-pve_hardening_kernel_cmdline_intel_args:
+__pve_kernel_cmdline_intel_args:
   - intel_iommu=on
 
-pve_hardening_kernel_cmdline_amd_args:
+__pve_kernel_cmdline_amd_args:
   - amd_iommu=force_isolation
-
-pve_hardening_kernel_cmdline_volatile_arg_prefixes:
-  - BOOT_IMAGE=

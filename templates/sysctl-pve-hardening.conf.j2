@@ -1,4 +1,4 @@
 # Ansible managed: PVE-safe host hardening.
-{% for key, value in pve_hardening_sysctl_values | dictsort %}
+{% for key, value in __pve_hardening_sysctl_values | dictsort %}
 {{ key }} = {{ value }}
 {% endfor %}

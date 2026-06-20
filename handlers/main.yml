@@ -6,21 +6,21 @@
   ansible.builtin.command:
     argv:
       - sysctl
-      - "--load={{ pve_hardening_sysctl_config_path }}"
+      - "--load={{ __pve_hardening_sysctl_config_path }}"
   changed_when: true
   listen: pve apply sysctl hardening
   when:
-    - pve_hardening_sysctl_apply_runtime | bool
+    - __pve_hardening_sysctl_apply_runtime | bool
     - not __pve_is_container | default(false) | bool
 
 - name: "PVE | Reload sshd"
   ansible.builtin.systemd_service:
-    name: "{{ pve_hardening_sshd_service_name }}"
+    name: "{{ __pve_hardening_sshd_service_name }}"
     state: reloaded
   listen: pve reload sshd
   when:
     - not __pve_is_container | default(false) | bool
-    - pve_hardening_sshd_service_name in __pve_service_names | default([])
+    - __pve_hardening_sshd_service_name in __pve_service_names | default([])
 
 - name: "PVE | Load audit rules"
   ansible.builtin.command:
@@ -42,7 +42,7 @@
 - name: "PVE | Refresh proxmox boot entries"
   ansible.builtin.command:
     argv:
-      - "{{ pve_hardening_kernel_cmdline_proxmox_boot_tool_path }}"
+      - "{{ __pve_kernel_cmdline_proxmox_boot_tool_path }}"
       - refresh
   changed_when: true
   listen: pve refresh proxmox boot
@@ -53,7 +53,7 @@
 - name: "PVE | Update grub"
   ansible.builtin.command:
     argv:
-      - "{{ pve_hardening_kernel_cmdline_update_grub_path }}"
+      - "{{ __pve_kernel_cmdline_update_grub_path }}"
   changed_when: true
   listen: pve update grub
   when:

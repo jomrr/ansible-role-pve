@@ -4,7 +4,7 @@
 
 - name: "PVE | Select temporary ACL paths"
   ansible.builtin.set_fact:
-    __pve_hardening_tmp_acl_paths: "{{ pve_hardening_tmp_acl_paths | difference(__pve_tmp_acl_skipped_paths) }}"
+    __pve_hardening_effective_tmp_acl_paths: "{{ __pve_hardening_tmp_acl_paths | difference(__pve_tmp_acl_skipped_paths) }}"
   vars:
     __pve_tmp_acl_skipped_paths: "{{ ['/tmp'] if __pve_tmp_mount_active | default(false) | bool else [] }}"
 
@@ -15,4 +15,4 @@
     owner: root
     group: root
     mode: "1777"
-  loop: "{{ __pve_hardening_tmp_acl_paths }}"
+  loop: "{{ __pve_hardening_effective_tmp_acl_paths }}"

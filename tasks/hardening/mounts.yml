@@ -9,7 +9,7 @@
     fstype: "{{ __pve_mount_info.fstype }}"
     opts: "{{ (__pve_mount_existing_options + __pve_mount_desired_options) | reject('equalto', '') | unique | join(',') }}"
     state: mounted
-  loop: "{{ pve_hardening_mount_policy | dict2items }}"
+  loop: "{{ __pve_hardening_mount_policy | dict2items }}"
   loop_control:
     label: "{{ item.key }}"
   vars:

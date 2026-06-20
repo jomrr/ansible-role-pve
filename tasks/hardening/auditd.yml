@@ -4,7 +4,7 @@
 
 - name: "PVE | Install auditd packages"
   ansible.builtin.package:
-    name: "{{ pve_hardening_auditd_packages }}"
+    name: "{{ __pve_hardening_auditd_packages }}"
     state: present
 
 - name: "PVE | Configure auditd storage actions"
@@ -28,7 +28,7 @@
 
 - name: "PVE | Install audit rules"
   ansible.builtin.copy:
-    dest: "{{ pve_hardening_auditd_rules_path }}"
+    dest: "{{ __pve_hardening_auditd_rules_path }}"
     owner: root
     group: root
     mode: "0640"
