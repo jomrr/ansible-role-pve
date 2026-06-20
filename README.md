@@ -6,19 +6,20 @@ Ansible role for managing Proxmox VE nodes and clusters.
 
 ## Purpose
 
-This role manages Proxmox VE nodes with a deliberately conservative operational profile. It installs a persistent no-subscription warning suppression hook, can mask Proxmox VE HA services on nodes that intentionally do not run HA, and applies host hardening that is safe for PVE, KVM, LXC, and clustered installations.
+This role manages Proxmox VE nodes with a deliberately conservative operational profile. It configures the no-subscription repository and warning suppression, can mask Proxmox VE HA services on nodes that intentionally do not run HA, and applies host hardening that is safe for PVE, KVM, LXC, and clustered installations.
 
 ## Scope
 
 ### Managed
 
+- Proxmox VE no-subscription repository and enterprise repository state.
 - Proxmox VE no-subscription warning suppression script and APT hook.
 - Optional masking of `pve-ha-lrm.service`, `pve-ha-crm.service`, and `corosync.service`.
 - PVE-safe package, kernel module, sysctl, sshd, auditd, temporary-directory, and mountpoint hardening.
 
 ### Not Managed
 
-- Proxmox VE repository setup, installation, upgrades, cluster creation, or storage configuration.
+- Proxmox VE installation, upgrades, cluster creation, or storage configuration.
 - VM, container, backup, firewall, SDN, Ceph, or HA resource definitions.
 - Aggressive CIS controls that can break PVE networking, storage, KVM, LXC, or cluster operation.
 
@@ -45,7 +46,7 @@ The following variables are part of the public role interface.
 | Name | Type | Required | Default | Description |
 | ---- | ---- | -------- | ------- | ----------- |
 | `pve_fail_when_not_proxmox` | `bool` | `false` | `True` | Fail the role when the target does not look like a Proxmox VE node. |
-| `pve_no_subscription_nag_enabled` | `bool` | `false` | `True` | Install the Proxmox VE no-subscription warning suppression script and APT hook. |
+| `pve_no_subscription` | `bool` | `false` | `True` | Enable the Proxmox VE no-subscription repository, disable the enterprise repository, and suppress the no-subscription warning. |
 | `pve_ha_mask_services` | `bool` | `false` | `True` | Stop, disable, and mask selected Proxmox VE HA services when PVE is detected. |
 | `pve_ha_services` | `list` | `false` | - pve-ha-lrm.service<br />- pve-ha-crm.service<br />- corosync.service | Proxmox VE HA systemd units managed by the role. |
 | `pve_hardening_enabled` | `bool` | `false` | `True` | Enable PVE-safe host hardening tasks. |
@@ -71,6 +72,8 @@ The following variables are part of the public role interface.
 
 - `/usr/local/sbin/pve-disable-subscription-nag` idempotent no-subscription warning suppression script
 - `/etc/apt/apt.conf.d/99-pve-disable-subscription-nag` APT hook that re-applies the suppression script after package operations
+- `/etc/apt/sources.list.d/proxmox.sources` enabled Proxmox VE no-subscription repository in deb822 format
+- `/etc/apt/sources.list.d/pve-enterprise.sources` disabled Proxmox VE enterprise repository in deb822 format
 - `/etc/sysctl.d/99-pve-hardening.conf` PVE-safe sysctl hardening values
 - `/etc/modprobe.d/pve-hardening.conf` blacklist for safe unused protocols and uncommon filesystems
 - `/etc/ssh/sshd_config.d/10-pve-hardening.conf` small sshd drop-in when sshd management is enabled
@@ -81,12 +84,14 @@ The following variables are part of the public role interface.
 - Defaults are availability-preserving and avoid root lockout, audit halt-on-full, default SSH forwarding disablement, OverlayFS disablement, USB-storage disablement, and broad firewall policy changes.
 - HA masking is refused when `/etc/pve/ha/resources.cfg` contains configured resources.
 - PVE-only service actions are skipped when Proxmox VE is not detected and the Proxmox guard is explicitly disabled.
-- The hardening profile avoids sysctl values known to interfere with PVE bridges, forwarding, cluster traffic, KVM, or LXC.
+- The hardening controls avoid sysctl values known to interfere with PVE bridges, forwarding, cluster traffic, KVM, or LXC.
 - Kernel command line hardening is disabled by default because `module.sig_enforce=1` and `lockdown=integrity` can block unsigned DKMS or third-party modules.
 
 ## Operational Notes
 
 - `pve_fail_when_not_proxmox` defaults to true so accidental application to plain Debian fails.
+- `pve_no_subscription` enables `/etc/apt/sources.list.d/proxmox.sources` and disables `/etc/apt/sources.list.d/pve-enterprise.sources`.
+- `pve_no_subscription` removes legacy Proxmox VE `.list` repository files so Debian 13 uses deb822 source files.
 - Review configured HA resources before enabling HA masking on real clusters.
 - Audit immutable mode and halt-on-full are opt-in and should be tested against recovery procedures before use.
 - Kernel module blacklists affect future loads; reboot or manually unload modules if immediate removal is required.

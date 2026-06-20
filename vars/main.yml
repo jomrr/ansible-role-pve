@@ -5,6 +5,16 @@
 # Internal implementation details for the pve role.
 pve_no_subscription_nag_script_path: /usr/local/sbin/pve-disable-subscription-nag
 pve_no_subscription_nag_apt_hook_path: /etc/apt/apt.conf.d/99-pve-disable-subscription-nag
+__pve_no_subscription_sources_path: /etc/apt/sources.list.d/proxmox.sources
+__pve_enterprise_sources_path: /etc/apt/sources.list.d/pve-enterprise.sources
+__pve_legacy_no_subscription_list_path: /etc/apt/sources.list.d/pve-no-subscription.list
+__pve_legacy_enterprise_list_path: /etc/apt/sources.list.d/pve-enterprise.list
+__pve_proxmox_apt_suite: trixie
+__pve_proxmox_apt_keyring_path: /usr/share/keyrings/proxmox-archive-keyring.gpg
+__pve_no_subscription_repository_uri: http://download.proxmox.com/debian/pve
+__pve_no_subscription_repository_component: pve-no-subscription
+__pve_enterprise_repository_uri: https://enterprise.proxmox.com/debian/pve
+__pve_enterprise_repository_component: pve-enterprise
 __pve_no_subscription_nag_candidate_paths:
   - /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
   - /usr/share/pve-manager/js/pvemanagerlib.js

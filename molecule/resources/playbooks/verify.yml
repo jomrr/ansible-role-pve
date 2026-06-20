@@ -8,6 +8,8 @@
   vars:
     __pve_verify_script_path: /usr/local/sbin/pve-disable-subscription-nag
     __pve_verify_apt_hook_path: /etc/apt/apt.conf.d/99-pve-disable-subscription-nag
+    __pve_verify_no_subscription_sources_path: /etc/apt/sources.list.d/proxmox.sources
+    __pve_verify_enterprise_sources_path: /etc/apt/sources.list.d/pve-enterprise.sources
     __pve_verify_sysctl_path: /etc/sysctl.d/99-pve-hardening.conf
     __pve_verify_modprobe_path: /etc/modprobe.d/pve-hardening.conf
     __pve_verify_sshd_path: /etc/ssh/sshd_config.d/10-pve-hardening.conf
@@ -21,6 +23,8 @@
       loop:
         - "{{ __pve_verify_script_path }}"
         - "{{ __pve_verify_apt_hook_path }}"
+        - "{{ __pve_verify_no_subscription_sources_path }}"
+        - "{{ __pve_verify_enterprise_sources_path }}"
         - "{{ __pve_verify_sysctl_path }}"
         - "{{ __pve_verify_modprobe_path }}"
         - "{{ __pve_verify_sshd_path }}"
@@ -36,8 +40,34 @@
           - __pve_verify_managed_files.results[2].stat.exists
           - __pve_verify_managed_files.results[3].stat.exists
           - __pve_verify_managed_files.results[4].stat.exists
-          - not __pve_verify_managed_files.results[5].stat.exists
-          - not __pve_verify_managed_files.results[6].stat.exists
+          - __pve_verify_managed_files.results[5].stat.exists
+          - __pve_verify_managed_files.results[6].stat.exists
+          - not __pve_verify_managed_files.results[7].stat.exists
+          - not __pve_verify_managed_files.results[8].stat.exists
+
+    - name: "PVE | Read APT source files"
+      ansible.builtin.slurp:
+        src: "{{ item }}"
+      register: __pve_verify_source_files
+      loop:
+        - "{{ __pve_verify_no_subscription_sources_path }}"
+        - "{{ __pve_verify_enterprise_sources_path }}"
+
+    - name: "PVE | Set APT source content facts"
+      ansible.builtin.set_fact:
+        __pve_verify_no_subscription_source: "{{ __pve_verify_source_files.results[0].content | b64decode }}"
+        __pve_verify_enterprise_source: "{{ __pve_verify_source_files.results[1].content | b64decode }}"
+
+    - name: "PVE | Assert PVE APT repositories are configured"
+      ansible.builtin.assert:
+        that:
+          - "'URIs: http://download.proxmox.com/debian/pve' in __pve_verify_no_subscription_source"
+          - "'Suites: trixie' in __pve_verify_no_subscription_source"
+          - "'Components: pve-no-subscription' in __pve_verify_no_subscription_source"
+          - "'Enabled: yes' in __pve_verify_no_subscription_source"
+          - "'URIs: https://enterprise.proxmox.com/debian/pve' in __pve_verify_enterprise_source"
+          - "'Components: pve-enterprise' in __pve_verify_enterprise_source"
+          - "'Enabled: no' in __pve_verify_enterprise_source"
 
     - name: "PVE | Read hardening files"
       ansible.builtin.slurp:

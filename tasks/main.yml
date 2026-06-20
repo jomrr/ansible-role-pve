@@ -8,9 +8,9 @@
 - name: "PVE | Collect target facts"
   ansible.builtin.import_tasks: facts.yml
 
-- name: "PVE | Manage no-subscription warning suppression"
+- name: "PVE | Manage no-subscription repository and warning suppression"
   ansible.builtin.import_tasks: no_subscription.yml
-  when: pve_no_subscription_nag_enabled | bool
+  when: pve_no_subscription | bool
 
 - name: "PVE | Manage HA service masking"
   ansible.builtin.import_tasks: ha.yml

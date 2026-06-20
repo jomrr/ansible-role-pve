@@ -2,6 +2,52 @@
 # role: pve
 # file: tasks/no_subscription.yml
 
+- name: "PVE | Ensure APT source directory exists"
+  ansible.builtin.file:
+    path: "{{ __pve_no_subscription_sources_path | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: "PVE | Remove legacy Proxmox VE no-subscription repository list"
+  ansible.builtin.file:
+    path: "{{ __pve_legacy_no_subscription_list_path }}"
+    state: absent
+
+- name: "PVE | Remove legacy Proxmox VE enterprise repository list"
+  ansible.builtin.file:
+    path: "{{ __pve_legacy_enterprise_list_path }}"
+    state: absent
+
+- name: "PVE | Enable Proxmox VE no-subscription repository"
+  ansible.builtin.copy:
+    dest: "{{ __pve_no_subscription_sources_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      Types: deb
+      URIs: {{ __pve_no_subscription_repository_uri }}
+      Suites: {{ __pve_proxmox_apt_suite }}
+      Components: {{ __pve_no_subscription_repository_component }}
+      Signed-By: {{ __pve_proxmox_apt_keyring_path }}
+      Enabled: yes
+
+- name: "PVE | Disable Proxmox VE enterprise repository"
+  ansible.builtin.copy:
+    dest: "{{ __pve_enterprise_sources_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      Types: deb
+      URIs: {{ __pve_enterprise_repository_uri }}
+      Suites: {{ __pve_proxmox_apt_suite }}
+      Components: {{ __pve_enterprise_repository_component }}
+      Signed-By: {{ __pve_proxmox_apt_keyring_path }}
+      Enabled: no
+
 - name: "PVE | Ensure no-subscription script directory exists"
   ansible.builtin.file:
     path: "{{ pve_no_subscription_nag_script_path | dirname }}"

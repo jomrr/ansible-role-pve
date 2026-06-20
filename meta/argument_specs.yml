@@ -6,7 +6,7 @@ argument_specs:
   main:
     short_description: Manage Proxmox VE nodes and clusters
     description:
-      - Installs a no-subscription warning suppression hook for Proxmox VE package updates.
+      - Configures the Proxmox VE no-subscription repository and warning suppression hook.
       - Masks Proxmox VE HA services on nodes that are intentionally not running HA resources.
       - Applies Debian CIS Level 2 inspired host hardening that is safe for Proxmox VE,
         KVM, LXC, and cluster operation.
@@ -18,12 +18,12 @@ argument_specs:
         required: false
         default: true
         description: Fail the role when the target does not look like a Proxmox VE node.
-      pve_no_subscription_nag_enabled:
+      pve_no_subscription:
         type: bool
         required: false
         default: true
-        description: Install the Proxmox VE no-subscription warning suppression script and
-          APT hook.
+        description: Enable the Proxmox VE no-subscription repository, disable the enterprise
+          repository, and suppress the no-subscription warning.
       pve_ha_mask_services:
         type: bool
         required: false
