@@ -36,7 +36,7 @@
     argv:
       - "{{ pve_no_subscription_nag_script_path }}"
   environment:
-    PVE_NAG_FILE: "{{ pve_no_subscription_nag_target_path }}"
+    PVE_NAG_FILE: "{{ __pve_no_subscription_nag_target_path }}"
   register: __pve_no_subscription_run
   changed_when: __pve_no_subscription_run.stdout is search('^patched:')
-  when: pve_no_subscription_nag_target_exists | bool
+  when: __pve_no_subscription_nag_target_exists | bool

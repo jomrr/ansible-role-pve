@@ -2,9 +2,45 @@
 # Internal implementation details for the pve role.
 pve_no_subscription_nag_script_path: /usr/local/sbin/pve-disable-subscription-nag
 pve_no_subscription_nag_apt_hook_path: /etc/apt/apt.conf.d/99-pve-disable-subscription-nag
-pve_no_subscription_nag_candidate_paths:
+__pve_no_subscription_nag_candidate_paths:
   - /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
   - /usr/share/pve-manager/js/pvemanagerlib.js
+
+__pve_container_types:
+  - container
+  - containerd
+  - docker
+  - lxc
+  - podman
+  - systemd-nspawn
+
+__pve_marker_paths:
+  - /etc/pve
+  - /usr/bin/pveversion
+
+__pve_package_markers:
+  - proxmox-ve
+  - pve-manager
+  - pve-cluster
+
+__pve_service_markers:
+  - pve-cluster.service
+  - pvedaemon.service
+  - pveproxy.service
+  - pvestatd.service
+
+__pve_tmp_mount_unit_paths:
+  - /etc/systemd/system/tmp.mount
+  - /run/systemd/system/tmp.mount
+  - /usr/lib/systemd/system/tmp.mount
+  - /lib/systemd/system/tmp.mount
+
+__pve_tmp_mount_active_states:
+  - active
+  - mounted
+  - running
+
+__pve_ha_resources_config_path: /etc/pve/ha/resources.cfg
 
 pve_hardening_absent_packages:
   - nis

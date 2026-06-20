@@ -50,4 +50,4 @@
     name: auditd.service
     enabled: true
     state: started
-  when: not pve_is_container | bool
+  when: not __pve_is_container | bool

@@ -13,7 +13,7 @@ This role manages Proxmox VE nodes with a deliberately conservative operational 
 ### Managed
 
 - Proxmox VE no-subscription warning suppression script and APT hook.
-- Optional masking of `pve-ha-lrm.service`, `pve-ha-crm.service`, and present optional HA-adjacent units.
+- Optional masking of `pve-ha-lrm.service`, `pve-ha-crm.service`, and `corosync.service`.
 - PVE-safe package, kernel module, sysctl, sshd, auditd, temporary-directory, and mountpoint hardening.
 
 ### Not Managed
@@ -47,10 +47,8 @@ The following variables are part of the public role interface.
 | `pve_fail_when_not_proxmox` | `bool` | `false` | `True` | Fail the role when the target does not look like a Proxmox VE node. |
 | `pve_no_subscription_nag_enabled` | `bool` | `false` | `True` | Install the Proxmox VE no-subscription warning suppression script and APT hook. |
 | `pve_ha_mask_services` | `bool` | `false` | `True` | Stop, disable, and mask selected Proxmox VE HA services when PVE is detected. |
-| `pve_ha_force_mask` | `bool` | `false` | `False` | Allow masking HA services even when configured HA resources are detected. |
-| `pve_ha_services` | `list` | `false` | - pve-ha-lrm.service<br />- pve-ha-crm.service<br />- watchdog-mux.service | Proxmox VE HA systemd units managed by the role. |
+| `pve_ha_services` | `list` | `false` | - pve-ha-lrm.service<br />- pve-ha-crm.service<br />- corosync.service | Proxmox VE HA systemd units managed by the role. |
 | `pve_hardening_enabled` | `bool` | `false` | `True` | Enable PVE-safe host hardening tasks. |
-| `pve_hardening_profile` | `str` | `false` | `pve_safe` | Hardening profile to apply. |
 | `pve_hardening_disable_usb_storage` | `bool` | `false` | `False` | Blacklist usb-storage. This is opt-in because removable media may be operationally required. |
 | `pve_hardening_disable_overlayfs` | `bool` | `false` | `False` | Blacklist overlayfs. This is opt-in because it can affect container workflows. |
 | `pve_hardening_disable_squashfs` | `bool` | `false` | `False` | Blacklist squashfs. This is opt-in because some operational workflows use squashfs images. |
@@ -81,7 +79,7 @@ The following variables are part of the public role interface.
 ## Security Notes
 
 - Defaults are availability-preserving and avoid root lockout, audit halt-on-full, default SSH forwarding disablement, OverlayFS disablement, USB-storage disablement, and broad firewall policy changes.
-- HA masking is refused when `/etc/pve/ha/resources.cfg` contains configured resources unless `pve_ha_force_mask` is set.
+- HA masking is refused when `/etc/pve/ha/resources.cfg` contains configured resources.
 - PVE-only service actions are skipped when Proxmox VE is not detected and the Proxmox guard is explicitly disabled.
 - The hardening profile avoids sysctl values known to interfere with PVE bridges, forwarding, cluster traffic, KVM, or LXC.
 - Kernel command line hardening is disabled by default because `module.sig_enforce=1` and `lockdown=integrity` can block unsigned DKMS or third-party modules.

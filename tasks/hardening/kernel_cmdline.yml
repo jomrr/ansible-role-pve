@@ -2,10 +2,10 @@
 - name: "PVE | Skip kernel cmdline hardening in containers"
   ansible.builtin.debug:
     msg: "Skipping kernel command line hardening because the target is a container."
-  when: pve_is_container | bool
+  when: __pve_is_container | bool
 
 - name: "PVE | Manage kernel command line hardening"
-  when: not pve_is_container | bool
+  when: not __pve_is_container | bool
   block:
     - name: "PVE | Stat kernel command line integration paths"
       ansible.builtin.stat:
@@ -48,7 +48,7 @@
             + (__pve_kernel_cmdline_metal_args if pve_hardening_kernel_cmdline_include_metal | bool else [])
             + (__pve_kernel_cmdline_intel_args + __pve_kernel_cmdline_amd_args)) | unique | list }}
       vars:
-        __pve_processor_text: "{{ ansible_facts.processor | default([]) | join(' ') | lower }}"
+        __pve_processor_text: "{{ ansible_facts['processor'] | default([]) | join(' ') | lower }}"
         __pve_kernel_cmdline_base_args: "{{ pve_hardening_kernel_cmdline_base_args }}"
         __pve_kernel_cmdline_metal_args: "{{ pve_hardening_kernel_cmdline_metal_args }}"
         __pve_kernel_cmdline_intel_args: >-

@@ -30,11 +30,6 @@ argument_specs:
         default: true
         description: Stop, disable, and mask selected Proxmox VE HA services when PVE is
           detected.
-      pve_ha_force_mask:
-        type: bool
-        required: false
-        default: false
-        description: Allow masking HA services even when configured HA resources are detected.
       pve_ha_services:
         type: list
         elements: str
@@ -42,20 +37,13 @@ argument_specs:
         default:
           - pve-ha-lrm.service
           - pve-ha-crm.service
-          - watchdog-mux.service
+          - corosync.service
         description: Proxmox VE HA systemd units managed by the role.
       pve_hardening_enabled:
         type: bool
         required: false
         default: true
         description: Enable PVE-safe host hardening tasks.
-      pve_hardening_profile:
-        type: str
-        required: false
-        default: pve_safe
-        choices:
-          - pve_safe
-        description: Hardening profile to apply.
       pve_hardening_disable_usb_storage:
         type: bool
         required: false

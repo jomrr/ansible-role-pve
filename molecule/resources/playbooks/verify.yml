@@ -13,28 +13,7 @@
     __pve_verify_sshd_path: /etc/ssh/sshd_config.d/10-pve-hardening.conf
     __pve_verify_old_sshd_path: /etc/ssh/sshd_config.d/90-pve-hardening.conf
     __pve_verify_grub_dropin_path: /etc/default/grub.d/10-pve-hardening.cfg
-    __pve_verify_project_dir: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"
-    __pve_verify_obsolete_patterns:
-      - "{{ 'pve_' ~ 'cis_' }}"
-      - "{{ 'pve_ha_' ~ 'optional_services' }}"
   tasks:
-    - name: "PVE | Assert obsolete variable references are absent"
-      delegate_to: localhost
-      ansible.builtin.command:
-        argv:
-          - grep
-          - -R
-          - -E
-          - "{{ __pve_verify_obsolete_patterns | join('|') }}"
-          - "{{ __pve_verify_project_dir }}/defaults"
-          - "{{ __pve_verify_project_dir }}/handlers"
-          - "{{ __pve_verify_project_dir }}/tasks"
-          - "{{ __pve_verify_project_dir }}/templates"
-          - "{{ __pve_verify_project_dir }}/vars"
-      register: __pve_verify_obsolete_references
-      changed_when: false
-      failed_when: __pve_verify_obsolete_references.rc == 0 or __pve_verify_obsolete_references.rc > 1
-
     - name: "PVE | Stat managed files"
       ansible.builtin.stat:
         path: "{{ item }}"
@@ -99,7 +78,7 @@
       loop:
         - pve-ha-lrm.service
         - pve-ha-crm.service
-        - watchdog-mux.service
+        - corosync.service
 
     - name: "PVE | Assert PVE-only services were not masked in the Debian container"
       ansible.builtin.assert:

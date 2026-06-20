@@ -7,15 +7,13 @@ pve_no_subscription_nag_enabled: true
 
 # HA services are only masked after PVE detection and HA resource checks.
 pve_ha_mask_services: true
-pve_ha_force_mask: false
 pve_ha_services:
   - pve-ha-lrm.service
   - pve-ha-crm.service
-  - watchdog-mux.service
+  - corosync.service
 
-# PVE-safe hardening profile. Risky controls stay opt-in.
+# PVE-safe hardening controls. Risky controls stay opt-in.
 pve_hardening_enabled: true
-pve_hardening_profile: pve_safe
 pve_hardening_disable_usb_storage: false
 pve_hardening_disable_overlayfs: false
 pve_hardening_disable_squashfs: false

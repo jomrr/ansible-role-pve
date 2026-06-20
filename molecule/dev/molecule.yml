@@ -29,7 +29,6 @@ provisioner:
         pve_no_subscription_nag_enabled: true
         pve_ha_mask_services: true
         pve_hardening_enabled: true
-        pve_hardening_profile: "pve_safe"
         pve_hardening_auditd_enabled: true
 verifier:
   name: "ansible"
