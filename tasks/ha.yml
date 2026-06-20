@@ -1,4 +1,7 @@
 ---
+# role: pve
+# file: tasks/ha.yml
+
 - name: "PVE | Skip HA masking when PVE is not detected"
   ansible.builtin.debug:
     msg: "Skipping PVE HA service masking because Proxmox VE was not detected."

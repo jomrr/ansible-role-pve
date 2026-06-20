@@ -1,4 +1,7 @@
 ---
+# role: pve
+# file: tasks/facts.yml
+
 - name: "PVE | Collect package facts"
   ansible.builtin.package_facts:
     manager: auto

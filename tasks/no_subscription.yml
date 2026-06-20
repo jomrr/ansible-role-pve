@@ -1,4 +1,7 @@
 ---
+# role: pve
+# file: tasks/no_subscription.yml
+
 - name: "PVE | Ensure no-subscription script directory exists"
   ansible.builtin.file:
     path: "{{ pve_no_subscription_nag_script_path | dirname }}"

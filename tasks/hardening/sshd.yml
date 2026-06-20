@@ -1,4 +1,7 @@
 ---
+# role: pve
+# file: tasks/hardening/sshd.yml
+
 - name: "PVE | Ensure sshd drop-in directory exists"
   ansible.builtin.file:
     path: "{{ pve_hardening_sshd_config_path | dirname }}"

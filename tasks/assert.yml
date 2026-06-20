@@ -1,4 +1,7 @@
 ---
+# role: pve
+# file: tasks/assert.yml
+
 - name: "PVE | Assert supported inputs"
   ansible.builtin.assert:
     that:

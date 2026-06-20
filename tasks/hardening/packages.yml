@@ -1,4 +1,7 @@
 ---
+# role: pve
+# file: tasks/hardening/packages.yml
+
 - name: "PVE | Remove installed unsafe legacy packages"
   ansible.builtin.package:
     name: "{{ __pve_hardening_installed_absent_packages }}"

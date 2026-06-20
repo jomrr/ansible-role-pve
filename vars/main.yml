@@ -1,4 +1,7 @@
 ---
+# role: pve
+# file: vars/main.yml
+
 # Internal implementation details for the pve role.
 pve_no_subscription_nag_script_path: /usr/local/sbin/pve-disable-subscription-nag
 pve_no_subscription_nag_apt_hook_path: /etc/apt/apt.conf.d/99-pve-disable-subscription-nag

@@ -1,4 +1,7 @@
 ---
+# role: pve
+# file: tasks/main.yml
+
 - name: "PVE | Validate role inputs"
   ansible.builtin.import_tasks: assert.yml
 

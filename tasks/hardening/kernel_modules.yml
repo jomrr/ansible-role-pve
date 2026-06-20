@@ -1,4 +1,7 @@
 ---
+# role: pve
+# file: tasks/hardening/kernel_modules.yml
+
 - name: "PVE | Build kernel module blacklist"
   ansible.builtin.set_fact:
     __pve_hardening_kernel_modules: >-
