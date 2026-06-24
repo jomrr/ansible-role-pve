@@ -34,9 +34,23 @@ pve_hardening_tmp_acl_enabled: true
 pve_hardening_mounts_enabled: true
 pve_hardening_dev_shm_noexec: true
 
-# Kernel cmdline hardening can block unsigned third-party modules, so it is opt-in.
-pve_hardening_kernel_cmdline_enabled: false
-pve_hardening_kernel_cmdline_include_base: true
-pve_hardening_kernel_cmdline_include_metal: true
-pve_hardening_kernel_cmdline_include_cpu_vendor: true
-pve_hardening_kernel_cmdline_reboot_required: true
+# Kernel cmdline changes require a reboot and can block unsigned third-party modules.
+pve_cmdline:
+  mitigations=auto: true
+  debugfs=off: true
+  init_on_alloc=1: true
+  init_on_free=1: true
+  kexec_load_disabled=1: true
+  lockdown=integrity: true
+  module.sig_enforce=1: true
+  page_alloc.shuffle=1: true
+  pti=on: true
+  randomize_kstack_offset=on: true
+  slab_nomerge: true
+  spec_store_bypass_disable=on: true
+  vsyscall=none: true
+  efi=disable_early_pci_dma: true
+  iommu=force: true
+  iommu.strict=1: true
+  intel_iommu=on: true
+  amd_iommu=force_isolation: true

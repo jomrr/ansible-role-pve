@@ -62,11 +62,7 @@ The following variables are part of the public role interface.
 | `pve_hardening_tmp_acl_enabled` | `bool` | `false` | `True` | Ensure shared temporary directories have root ownership and the sticky bit where appropriate. |
 | `pve_hardening_mounts_enabled` | `bool` | `false` | `True` | Enable conservative mountpoint hardening for existing safe mountpoints. |
 | `pve_hardening_dev_shm_noexec` | `bool` | `false` | `True` | Ensure noexec is part of the /dev/shm mount hardening policy on real hosts. |
-| `pve_hardening_kernel_cmdline_enabled` | `bool` | `false` | `False` | Add supported kernel command line hardening arguments. Disabled by default for module compatibility. |
-| `pve_hardening_kernel_cmdline_include_base` | `bool` | `false` | `True` | Include the base kernel command line hardening argument set when cmdline hardening is enabled. |
-| `pve_hardening_kernel_cmdline_include_metal` | `bool` | `false` | `True` | Include physical-host IOMMU hardening arguments when cmdline hardening is enabled. |
-| `pve_hardening_kernel_cmdline_include_cpu_vendor` | `bool` | `false` | `True` | Include Intel or AMD IOMMU arguments based on the detected CPU vendor. |
-| `pve_hardening_kernel_cmdline_reboot_required` | `bool` | `false` | `True` | Report that a reboot is required after kernel command line changes. |
+| `pve_cmdline` | `dict` | `false` | mitigations=auto: true<br />debugfs=off: true<br />init_on_alloc=1: true<br />init_on_free=1: true<br />kexec_load_disabled=1: true<br />lockdown=integrity: true<br />module.sig_enforce=1: true<br />page_alloc.shuffle=1: true<br />pti=on: true<br />randomize_kstack_offset=on: true<br />slab_nomerge: true<br />spec_store_bypass_disable=on: true<br />vsyscall=none: true<br />efi=disable_early_pci_dma: true<br />iommu=force: true<br />iommu.strict=1: true<br />intel_iommu=on: true<br />amd_iommu=force_isolation: true | Map of kernel command line arguments to booleans. Enabled arguments are added while existing arguments are preserved; Intel and AMD arguments are applied only on matching CPU vendors. Kernel command line changes require a reboot. |
 
 ## Managed Files
 
@@ -77,7 +73,7 @@ The following variables are part of the public role interface.
 - `/etc/sysctl.d/99-pve-hardening.conf` PVE-safe sysctl hardening values
 - `/etc/modprobe.d/pve-hardening.conf` blacklist for safe unused protocols and uncommon filesystems
 - `/etc/ssh/sshd_config.d/10-pve-hardening.conf` small sshd drop-in when sshd management is enabled
-- `/etc/default/grub.d/10-pve-hardening.cfg` optional GRUB kernel command line drop-in when explicitly enabled
+- `/etc/default/grub.d/10-pve-hardening.cfg` GRUB kernel command line drop-in used when /etc/kernel/cmdline is absent
 
 ## Security Notes
 
@@ -85,7 +81,7 @@ The following variables are part of the public role interface.
 - HA masking is refused when `/etc/pve/ha/resources.cfg` contains configured resources.
 - PVE-only service actions are skipped when Proxmox VE is not detected and the Proxmox guard is explicitly disabled.
 - The hardening controls avoid sysctl values known to interfere with PVE bridges, forwarding, cluster traffic, KVM, or LXC.
-- Kernel command line hardening is disabled by default because `module.sig_enforce=1` and `lockdown=integrity` can block unsigned DKMS or third-party modules.
+- `pve_cmdline` arguments are enabled by default. Disable arguments such as `module.sig_enforce=1` or `lockdown=integrity` explicitly if they conflict with unsigned DKMS or third-party modules.
 
 ## Operational Notes
 
@@ -95,7 +91,7 @@ The following variables are part of the public role interface.
 - Review configured HA resources before enabling HA masking on real clusters.
 - Audit immutable mode and halt-on-full are opt-in and should be tested against recovery procedures before use.
 - Kernel module blacklists affect future loads; reboot or manually unload modules if immediate removal is required.
-- Kernel command line hardening preserves existing arguments, adds missing hardening arguments, and requires a reboot.
+- `pve_cmdline` controls kernel command line hardening arguments individually; existing arguments are preserved and cmdline changes require a reboot.
 
 ## Supported Platforms
 

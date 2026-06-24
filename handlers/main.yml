@@ -46,9 +46,7 @@
       - refresh
   changed_when: true
   listen: pve refresh proxmox boot
-  when:
-    - pve_hardening_kernel_cmdline_enabled | bool
-    - not __pve_is_container | default(false) | bool
+  when: not __pve_is_container | default(false) | bool
 
 - name: "PVE | Update grub"
   ansible.builtin.command:
@@ -56,6 +54,4 @@
       - "{{ __pve_kernel_cmdline_update_grub_path }}"
   changed_when: true
   listen: pve update grub
-  when:
-    - pve_hardening_kernel_cmdline_enabled | bool
-    - not __pve_is_container | default(false) | bool
+  when: not __pve_is_container | default(false) | bool

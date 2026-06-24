@@ -130,32 +130,11 @@ __pve_hardening_mount_policy:
 
 __pve_kernel_cmdline_path: /etc/kernel/cmdline
 __pve_kernel_cmdline_grub_dropin_path: /etc/default/grub.d/10-pve-hardening.cfg
-__pve_kernel_cmdline_proxmox_boot_uuids_path: /etc/kernel/proxmox-boot-uuids
 __pve_kernel_cmdline_proxmox_boot_tool_path: /usr/sbin/proxmox-boot-tool
 __pve_kernel_cmdline_update_grub_path: /usr/sbin/update-grub
 
-__pve_kernel_cmdline_base_args:
-  - mitigations=auto
-  - debugfs=off
-  - init_on_alloc=1
-  - init_on_free=1
-  - kexec_load_disabled=1
-  - lockdown=integrity
-  - module.sig_enforce=1
-  - page_alloc.shuffle=1
-  - pti=on
-  - randomize_kstack_offset=on
-  - slab_nomerge
-  - spec_store_bypass_disable=on
-  - vsyscall=none
-
-__pve_kernel_cmdline_metal_args:
-  - efi=disable_early_pci_dma
-  - iommu=force
-  - iommu.strict=1
-
-__pve_kernel_cmdline_intel_args:
+__pve_kernel_cmdline_intel_only_args:
   - intel_iommu=on
 
-__pve_kernel_cmdline_amd_args:
+__pve_kernel_cmdline_amd_only_args:
   - amd_iommu=force_isolation

@@ -111,31 +111,28 @@ argument_specs:
         default: true
         description: Ensure noexec is part of the /dev/shm mount hardening policy on real
           hosts.
-      pve_hardening_kernel_cmdline_enabled:
-        type: bool
+      pve_cmdline:
+        type: dict
         required: false
-        default: false
-        description: Add supported kernel command line hardening arguments. Disabled by
-          default for module compatibility.
-      pve_hardening_kernel_cmdline_include_base:
-        type: bool
-        required: false
-        default: true
-        description: Include the base kernel command line hardening argument set when cmdline
-          hardening is enabled.
-      pve_hardening_kernel_cmdline_include_metal:
-        type: bool
-        required: false
-        default: true
-        description: Include physical-host IOMMU hardening arguments when cmdline hardening
-          is enabled.
-      pve_hardening_kernel_cmdline_include_cpu_vendor:
-        type: bool
-        required: false
-        default: true
-        description: Include Intel or AMD IOMMU arguments based on the detected CPU vendor.
-      pve_hardening_kernel_cmdline_reboot_required:
-        type: bool
-        required: false
-        default: true
-        description: Report that a reboot is required after kernel command line changes.
+        default:
+          mitigations=auto: true
+          debugfs=off: true
+          init_on_alloc=1: true
+          init_on_free=1: true
+          kexec_load_disabled=1: true
+          lockdown=integrity: true
+          module.sig_enforce=1: true
+          page_alloc.shuffle=1: true
+          pti=on: true
+          randomize_kstack_offset=on: true
+          slab_nomerge: true
+          spec_store_bypass_disable=on: true
+          vsyscall=none: true
+          efi=disable_early_pci_dma: true
+          iommu=force: true
+          iommu.strict=1: true
+          intel_iommu=on: true
+          amd_iommu=force_isolation: true
+        description: Map of kernel command line arguments to booleans. Enabled arguments
+          are added while existing arguments are preserved; Intel and AMD arguments are
+          applied only on matching CPU vendors. Kernel command line changes require a reboot.

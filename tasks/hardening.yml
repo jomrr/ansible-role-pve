@@ -29,4 +29,5 @@
 
 - name: "PVE | Apply kernel command line hardening"
   ansible.builtin.import_tasks: hardening/kernel_cmdline.yml
-  when: pve_hardening_kernel_cmdline_enabled | bool
+  when: >-
+    (pve_cmdline | default({}) | dict2items | selectattr('value') | list | length) > 0
