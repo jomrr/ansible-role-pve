@@ -27,7 +27,6 @@
     __pve_package_names: "{{ (ansible_facts['packages'] | default({})).keys() | list }}"
     __pve_service_names: "{{ (ansible_facts['services'] | default({})).keys() | list }}"
     __pve_mounts_by_mount: {}
-    __pve_etc_pve_exists: "{{ __pve_marker_stats.results[0].stat.exists | bool }}"
     __pve_no_subscription_nag_target_exists: >-
       {{ __pve_nag_candidate_stats.results | selectattr('stat.exists') | list | length > 0 }}
     __pve_no_subscription_nag_target_path: >-
@@ -70,28 +69,8 @@
         or __pve_pveversion_exists
         or __pve_no_subscription_nag_target_exists }}
   vars:
+    __pve_etc_pve_exists: "{{ __pve_marker_stats.results[0].stat.exists | bool }}"
     __pve_pveversion_exists: "{{ __pve_marker_stats.results[1].stat.exists | bool }}"
-
-- name: "PVE | Stat HA resources configuration"
-  ansible.builtin.stat:
-    path: "{{ __pve_ha_resources_config_path }}"
-  register: __pve_ha_resources_stat
-  when: __pve_etc_pve_exists | bool
-
-- name: "PVE | Read HA resources configuration"
-  ansible.builtin.slurp:
-    src: "{{ __pve_ha_resources_config_path }}"
-  register: __pve_ha_resources_slurp
-  failed_when: false
-  when:
-    - __pve_etc_pve_exists | bool
-    - __pve_ha_resources_stat.stat.exists | default(false) | bool
-
-- name: "PVE | Set HA resources facts"
-  ansible.builtin.set_fact:
-    __pve_ha_resources_configured: "{{ (__pve_ha_resources_content | regex_replace('(?m)^\\s*#.*$', '') | trim | length) > 0 }}"
-  vars:
-    __pve_ha_resources_content: "{{ __pve_ha_resources_slurp.content | default('') | b64decode }}"
 
 - name: "PVE | Fail when target is not Proxmox VE"
   ansible.builtin.fail:

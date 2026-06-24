@@ -2,32 +2,39 @@
 # role: pve
 # file: tasks/ha.yml
 
-- name: "PVE | Skip HA masking when PVE is not detected"
+- name: "PVE | Skip HA service management when PVE is not detected"
   ansible.builtin.debug:
-    msg: "Skipping PVE HA service masking because Proxmox VE was not detected."
+    msg: "Skipping PVE HA service management because Proxmox VE was not detected."
   when: not __pve_detected | bool
 
-- name: "PVE | Mask selected HA services"
+- name: "PVE | Manage HA services"
   when: __pve_detected | bool
   block:
-    - name: "PVE | Refuse HA masking when HA resources exist"
-      ansible.builtin.fail:
-        msg: >-
-          Proxmox VE HA resources are configured in /etc/pve/ha/resources.cfg. Refusing to mask HA services.
-      when: __pve_ha_resources_configured | bool
-
-    - name: "PVE | Build allowed HA service list"
-      ansible.builtin.set_fact:
-        __pve_ha_requested_services: "{{ pve_ha_services | default([]) | unique | list }}"
-
-    - name: "PVE | Select installed HA services"
-      ansible.builtin.set_fact:
-        __pve_ha_available_services: "{{ __pve_ha_requested_services | select('in', __pve_service_names | default([])) | list }}"
-
     - name: "PVE | Stop, disable, and mask HA services"
       ansible.builtin.systemd_service:
-        name: "{{ item }}"
+        name: "{{ item.key }}"
         state: stopped
         enabled: false
         masked: true
-      loop: "{{ __pve_ha_available_services }}"
+      loop: "{{ pve_ha_services | default({}) | dict2items }}"
+      when:
+        - not (item.value | bool)
+        - item.key in (__pve_service_names | default([]))
+
+    - name: "PVE | Unmask HA services"
+      ansible.builtin.systemd_service:
+        name: "{{ item.key }}"
+        masked: false
+      loop: "{{ pve_ha_services | default({}) | dict2items }}"
+      when:
+        - item.value | bool
+        - item.key in (__pve_service_names | default([]))
+
+    - name: "PVE | Enable HA services"
+      ansible.builtin.systemd_service:
+        name: "{{ item.key }}"
+        enabled: true
+      loop: "{{ pve_ha_services | default({}) | dict2items }}"
+      when:
+        - item.value | bool
+        - item.key in (__pve_service_names | default([]))

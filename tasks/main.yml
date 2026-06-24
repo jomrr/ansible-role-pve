@@ -12,9 +12,9 @@
   ansible.builtin.import_tasks: no_subscription.yml
   when: pve_no_subscription | bool
 
-- name: "PVE | Manage HA service masking"
+- name: "PVE | Manage HA services"
   ansible.builtin.import_tasks: ha.yml
-  when: pve_ha_mask_services | bool
+  when: (pve_ha_services | default({}) | length) > 0
 
 - name: "PVE | Apply PVE-safe hardening"
   ansible.builtin.import_tasks: hardening.yml

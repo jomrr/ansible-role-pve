@@ -53,8 +53,6 @@ __pve_tmp_mount_active_states:
   - mounted
   - running
 
-__pve_ha_resources_config_path: /etc/pve/ha/resources.cfg
-
 __pve_hardening_absent_packages:
   - nis
   - rsh-client

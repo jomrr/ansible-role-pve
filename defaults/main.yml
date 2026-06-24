@@ -8,12 +8,11 @@ pve_fail_when_not_proxmox: true
 # Configure the PVE no-subscription repository and warning suppression.
 pve_no_subscription: true
 
-# HA services are only masked after PVE detection and HA resource checks.
-pve_ha_mask_services: true
+# HA service policy; true unmasks/enables, false stops/disables/masks.
 pve_ha_services:
-  - pve-ha-lrm.service
-  - pve-ha-crm.service
-  - corosync.service
+  pve-ha-lrm.service: false
+  pve-ha-crm.service: false
+  corosync.service: false
 
 # PVE-safe hardening controls. Risky controls stay opt-in.
 pve_hardening_enabled: true

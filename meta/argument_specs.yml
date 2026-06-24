@@ -7,7 +7,7 @@ argument_specs:
     short_description: Manage Proxmox VE nodes and clusters
     description:
       - Configures the Proxmox VE no-subscription repository and warning suppression hook.
-      - Masks Proxmox VE HA services on nodes that are intentionally not running HA resources.
+      - Manages Proxmox VE HA service state with explicit per-service booleans.
       - Applies Debian CIS Level 2 inspired host hardening that is safe for Proxmox VE,
         KVM, LXC, and cluster operation.
       - Skips real PVE-only actions cleanly when the target is a Debian test container without
@@ -24,21 +24,15 @@ argument_specs:
         default: true
         description: Enable the Proxmox VE no-subscription repository, disable the enterprise
           repository, and suppress the no-subscription warning.
-      pve_ha_mask_services:
-        type: bool
-        required: false
-        default: true
-        description: Stop, disable, and mask selected Proxmox VE HA services when PVE is
-          detected.
       pve_ha_services:
-        type: list
-        elements: str
+        type: dict
         required: false
         default:
-          - pve-ha-lrm.service
-          - pve-ha-crm.service
-          - corosync.service
-        description: Proxmox VE HA systemd units managed by the role.
+          pve-ha-lrm.service: false
+          pve-ha-crm.service: false
+          corosync.service: false
+        description: Map of Proxmox VE HA systemd units to booleans. True unmasks and enables
+          a unit; false stops, disables, and masks it.
       pve_hardening_enabled:
         type: bool
         required: false
