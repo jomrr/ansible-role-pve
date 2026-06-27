@@ -1,6 +1,6 @@
 # Ansible Role: pve
 
-![GitHub](https://img.shields.io/github/license/jomrr/ansible-role-pve) ![GitHub last commit](https://img.shields.io/github/last-commit/jomrr/ansible-role-pve) ![GitHub issues](https://img.shields.io/github/issues-raw/jomrr/ansible-role-pve) [![dev](https://img.shields.io/github/actions/workflow/status/jomrr/ansible-role-pve/dev-push-smoke.yml?branch=dev&event=push&label=dev)](https://github.com/jomrr/ansible-role-pve/actions/workflows/dev-push-smoke.yml?query=branch%3Adev) [![main](https://img.shields.io/github/actions/workflow/status/jomrr/ansible-role-pve/main-full-gate.yml?branch=main&event=push&label=main)](https://github.com/jomrr/ansible-role-pve/actions/workflows/main-full-gate.yml?query=branch%3Amain)
+![GitHub](https://img.shields.io/github/license/jomrr/ansible-role-pve) ![GitHub last commit](https://img.shields.io/github/last-commit/jomrr/ansible-role-pve) ![GitHub issues](https://img.shields.io/github/issues-raw/jomrr/ansible-role-pve) [![dev](https://img.shields.io/github/actions/workflow/status/jomrr/ansible-role-pve/dev.yml?branch=dev&event=push&label=dev)](https://github.com/jomrr/ansible-role-pve/actions/workflows/dev.yml?query=branch%3Adev) [![main](https://img.shields.io/github/actions/workflow/status/jomrr/ansible-role-pve/main.yml?branch=main&event=push&label=main)](https://github.com/jomrr/ansible-role-pve/actions/workflows/main.yml?query=branch%3Amain)
 
 Ansible role for managing Proxmox VE nodes and clusters.
 
