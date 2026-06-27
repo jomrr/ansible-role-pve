@@ -12,6 +12,13 @@
   ansible.builtin.import_tasks: no_subscription.yml
   when: pve_no_subscription | bool
 
+- name: "PVE | Install Proxmox VE"
+  ansible.builtin.import_tasks: install.yml
+
+- name: "PVE | Re-apply no-subscription repository and warning suppression"
+  ansible.builtin.import_tasks: no_subscription.yml
+  when: pve_no_subscription | bool
+
 - name: "PVE | Manage HA services"
   ansible.builtin.import_tasks: ha.yml
   when: (pve_ha_services | default({}) | length) > 0

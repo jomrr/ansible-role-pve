@@ -2,15 +2,10 @@
 # role: pve
 # file: tasks/ha.yml
 
-- name: "PVE | Skip HA service management when PVE is not detected"
-  ansible.builtin.debug:
-    msg: "Skipping PVE HA service management because Proxmox VE was not detected."
-  when: not __pve_detected | bool
-
 - name: "PVE | Manage HA services"
-  when: __pve_detected | bool
+  when: not __pve_is_container | bool
   block:
-    - name: "PVE | Stop, disable, and mask HA services"
+    - name: "PVE | Stop, disable and mask HA services"
       ansible.builtin.systemd_service:
         name: "{{ item.key }}"
         state: stopped
@@ -19,22 +14,13 @@
       loop: "{{ pve_ha_services | default({}) | dict2items }}"
       when:
         - not (item.value | bool)
-        - item.key in (__pve_service_names | default([]))
 
-    - name: "PVE | Unmask HA services"
+    - name: "PVE | Unmask, enable and start HA services"
       ansible.builtin.systemd_service:
         name: "{{ item.key }}"
+        state: started
         masked: false
-      loop: "{{ pve_ha_services | default({}) | dict2items }}"
-      when:
-        - item.value | bool
-        - item.key in (__pve_service_names | default([]))
-
-    - name: "PVE | Enable HA services"
-      ansible.builtin.systemd_service:
-        name: "{{ item.key }}"
         enabled: true
       loop: "{{ pve_ha_services | default({}) | dict2items }}"
       when:
         - item.value | bool
-        - item.key in (__pve_service_names | default([]))

@@ -25,7 +25,6 @@ provisioner:
   inventory:
     group_vars:
       all:
-        pve_fail_when_not_proxmox: false
         pve_no_subscription: true
         pve_hardening_enabled: true
         pve_hardening_auditd_enabled: true

@@ -6,26 +6,28 @@ Ansible role for managing Proxmox VE nodes and clusters.
 
 ## Purpose
 
-This role manages Proxmox VE nodes with a deliberately conservative operational profile. It configures the no-subscription repository and warning suppression, manages Proxmox VE HA service policy, and applies host hardening that is safe for PVE, KVM, LXC, and clustered installations.
+This role installs and manages Proxmox VE nodes with a deliberately conservative operational profile. It configures the no-subscription repository and warning suppression, manages Proxmox VE HA service policy, and applies host hardening that is safe for PVE, KVM, LXC, and clustered installations.
 
 ## Scope
 
 ### Managed
 
-- Proxmox VE no-subscription repository and enterprise repository state.
+- Proxmox VE package installation on Debian hosts.
+- Proxmox VE no-subscription repository state.
+- Proxmox VE APT keyring for the target Debian release.
 - Proxmox VE no-subscription warning suppression script and APT hook.
 - Service policy for `pve-ha-lrm.service`, `pve-ha-crm.service`, and `corosync.service`.
 - PVE-safe package, kernel module, sysctl, sshd, auditd, temporary-directory, and mountpoint hardening.
 
 ### Not Managed
 
-- Proxmox VE installation, upgrades, cluster creation, or storage configuration.
+- Proxmox VE upgrades, cluster creation, or storage configuration.
 - VM, container, backup, firewall, SDN, Ceph, or HA resource definitions.
 - Aggressive CIS controls that can break PVE networking, storage, KVM, LXC, or cluster operation.
 
 ## Requirements
 
-- Debian 13 or Proxmox VE based on Debian.
+- Debian host with a Proxmox VE supported release codename.
 - Root privileges for package, systemd, sysctl, auditd, and configuration-file management.
 - `community.general >=12.0.0` and `ansible.posix >=2.1.0` installed on the controller.
 
@@ -45,8 +47,7 @@ The following variables are part of the public role interface.
 
 | Name | Type | Required | Default | Description |
 | ---- | ---- | -------- | ------- | ----------- |
-| `pve_fail_when_not_proxmox` | `bool` | `false` | `True` | Fail the role when the target does not look like a Proxmox VE node. |
-| `pve_no_subscription` | `bool` | `false` | `True` | Enable the Proxmox VE no-subscription repository, disable the enterprise repository, and suppress the no-subscription warning. |
+| `pve_no_subscription` | `bool` | `false` | `True` | Enable the Proxmox VE no-subscription repository and suppress the no-subscription warning. |
 | `pve_ha_services` | `dict` | `false` | pve-ha-lrm.service: false<br />pve-ha-crm.service: false<br />corosync.service: false | Map of Proxmox VE HA systemd units to booleans. True unmasks and enables a unit; false stops, disables, and masks it. |
 | `pve_hardening_enabled` | `bool` | `false` | `True` | Enable PVE-safe host hardening tasks. |
 | `pve_hardening_disable_usb_storage` | `bool` | `false` | `False` | Blacklist usb-storage. This is opt-in because removable media may be operationally required. |
@@ -68,7 +69,7 @@ The following variables are part of the public role interface.
 - `/usr/local/sbin/pve-disable-subscription-nag` idempotent no-subscription warning suppression script
 - `/etc/apt/apt.conf.d/99-pve-disable-subscription-nag` APT hook that re-applies the suppression script after package operations
 - `/etc/apt/sources.list.d/proxmox.sources` enabled Proxmox VE no-subscription repository in deb822 format
-- `/etc/apt/sources.list.d/pve-enterprise.sources` disabled Proxmox VE enterprise repository in deb822 format
+- `/usr/share/keyrings/proxmox-archive-keyring.gpg` Proxmox VE APT keyring for the target Debian release
 - `/etc/sysctl.d/99-pve-hardening.conf` PVE-safe sysctl hardening values
 - `/etc/modprobe.d/pve-hardening.conf` blacklist for safe unused protocols and uncommon filesystems
 - `/etc/ssh/sshd_config.d/10-pve-hardening.conf` small sshd drop-in when sshd management is enabled
@@ -77,15 +78,16 @@ The following variables are part of the public role interface.
 ## Security Notes
 
 - Defaults are availability-preserving and avoid root lockout, audit halt-on-full, default SSH forwarding disablement, OverlayFS disablement, USB-storage disablement, and broad firewall policy changes.
-- PVE-only service actions are skipped when Proxmox VE is not detected and the Proxmox guard is explicitly disabled.
+- The role requires `ansible_facts.distribution` to be Debian; Debian-family derivatives are not accepted as PVE installation targets.
+- Proxmox VE package installation is skipped in containers so CI can verify configuration behavior without turning a container into a PVE host.
 - The hardening controls avoid sysctl values known to interfere with PVE bridges, forwarding, cluster traffic, KVM, or LXC.
 - `pve_cmdline` arguments are enabled by default. Disable arguments such as `module.sig_enforce=1` or `lockdown=integrity` explicitly if they conflict with unsigned DKMS or third-party modules.
 
 ## Operational Notes
 
-- `pve_fail_when_not_proxmox` defaults to true so accidental application to plain Debian fails.
-- `pve_no_subscription` enables `/etc/apt/sources.list.d/proxmox.sources` and disables `/etc/apt/sources.list.d/pve-enterprise.sources`.
-- `pve_no_subscription` removes legacy Proxmox VE `.list` repository files so Debian 13 uses deb822 source files.
+- `pve_no_subscription` enables `/etc/apt/sources.list.d/proxmox.sources` with `ansible_facts.distribution_release` as suite.
+- `pve_no_subscription` removes legacy or conflicting Proxmox VE repository files so APT uses the managed deb822 source.
+- Proxmox VE installation follows the Debian package set `proxmox-default-kernel`, `proxmox-ve`, `postfix`, `open-iscsi`, and `chrony`; reboot handling stays outside the role.
 - `pve_ha_services` maps each HA unit to true for unmasked/enabled or false for stopped/disabled/masked.
 - Audit immutable mode and halt-on-full are opt-in and should be tested against recovery procedures before use.
 - Kernel module blacklists affect future loads; reboot or manually unload modules if immediate removal is required.

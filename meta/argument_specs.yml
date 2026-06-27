@@ -6,24 +6,18 @@ argument_specs:
   main:
     short_description: Manage Proxmox VE nodes and clusters
     description:
+      - Installs the Proxmox VE package set on Debian hosts.
       - Configures the Proxmox VE no-subscription repository and warning suppression hook.
       - Manages Proxmox VE HA service state with explicit per-service booleans.
       - Applies Debian CIS Level 2 inspired host hardening that is safe for Proxmox VE,
         KVM, LXC, and cluster operation.
-      - Skips real PVE-only actions cleanly when the target is a Debian test container without
-        Proxmox VE installed.
     options:
-      pve_fail_when_not_proxmox:
-        type: bool
-        required: false
-        default: true
-        description: Fail the role when the target does not look like a Proxmox VE node.
       pve_no_subscription:
         type: bool
         required: false
         default: true
-        description: Enable the Proxmox VE no-subscription repository, disable the enterprise
-          repository, and suppress the no-subscription warning.
+        description: Enable the Proxmox VE no-subscription repository and suppress the no-subscription
+          warning.
       pve_ha_services:
         type: dict
         required: false

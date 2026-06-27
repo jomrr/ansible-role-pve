@@ -20,7 +20,6 @@
   listen: pve reload sshd
   when:
     - not __pve_is_container | default(false) | bool
-    - __pve_hardening_sshd_service_name in __pve_service_names | default([])
 
 - name: "PVE | Load audit rules"
   ansible.builtin.command:

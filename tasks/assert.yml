@@ -5,12 +5,13 @@
 - name: "PVE | Assert supported inputs"
   ansible.builtin.assert:
     that:
-      - ansible_facts['os_family'] | default('') == 'Debian'
+      - ansible_facts.distribution | default('') == 'Debian'
+      - ansible_facts.distribution_release | default('') in __pve_proxmox_apt_keyrings
       - (pve_ha_services | default({}) | dict2items | map(attribute='key') | difference(__pve_allowed_ha_services) | length) == 0
       - pve_hardening_sshd_permit_root_login in __pve_sshd_permit_root_login_values
     fail_msg: >-
-      The pve role supports Debian targets, the configured sshd PermitRootLogin values, and only the explicitly allowed
-      PVE HA services.
+      The pve role supports targets with ansible_facts.distribution set to Debian, a supported Debian release codename,
+      the configured sshd PermitRootLogin values, and only the explicitly allowed PVE HA services.
   vars:
     __pve_allowed_ha_services:
       - pve-ha-lrm.service

@@ -1,0 +1,12 @@
+---
+# role: pve
+# file: tasks/install.yml
+
+- name: "PVE | Install Proxmox VE package set"
+  ansible.builtin.apt:
+    name: "{{ __pve_install_packages }}"
+    state: present
+    update_cache: true
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+  when: not __pve_is_container | bool

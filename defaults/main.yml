@@ -2,9 +2,6 @@
 # role: pve
 # file: defaults/main.yml
 
-# Conservative public policy defaults for Proxmox VE node management.
-pve_fail_when_not_proxmox: true
-
 # Configure the PVE no-subscription repository and warning suppression.
 pve_no_subscription: true
 
