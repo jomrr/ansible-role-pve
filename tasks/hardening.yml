@@ -23,10 +23,6 @@
   ansible.builtin.import_tasks: hardening/filesystems.yml
   when: pve_hardening_tmp_acl_enabled | bool
 
-- name: "PVE | Apply mountpoint hardening"
-  ansible.builtin.import_tasks: hardening/mounts.yml
-  when: pve_hardening_mounts_enabled | bool
-
 - name: "PVE | Apply kernel command line hardening"
   ansible.builtin.import_tasks: hardening/kernel_cmdline.yml
   when: >-

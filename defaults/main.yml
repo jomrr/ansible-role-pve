@@ -26,10 +26,6 @@ pve_hardening_sshd_disable_forwarding: false
 # Directory permission hygiene for shared temporary paths.
 pve_hardening_tmp_acl_enabled: true
 
-# Mountpoint hardening avoids PVE storage paths and keeps /tmp and /var/tmp executable.
-pve_hardening_mounts_enabled: true
-pve_hardening_dev_shm_noexec: true
-
 # Kernel cmdline changes require a reboot and can block unsigned third-party modules.
 pve_cmdline:
   mitigations=auto: true

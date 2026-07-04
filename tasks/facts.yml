@@ -11,7 +11,6 @@
 - name: "PVE | Set base detection facts"
   ansible.builtin.set_fact:
     __pve_is_container: "{{ __pve_virtualization_type in __pve_container_types }}"
-    __pve_mounts_by_mount: {}
     __pve_no_subscription_nag_target_exists: >-
       {{ __pve_nag_candidate_stats.results | selectattr('stat.exists') | list | length > 0 }}
     __pve_no_subscription_nag_target_path: >-
@@ -19,26 +18,3 @@
         | default(__pve_no_subscription_nag_candidate_paths[0]) }}
   vars:
     __pve_virtualization_type: "{{ ansible_facts['virtualization_type'] | default('') }}"
-
-- name: "PVE | Index mount facts by mountpoint"
-  ansible.builtin.set_fact:
-    __pve_mounts_by_mount: "{{ __pve_mounts_by_mount | combine({(item['mount']): item}) }}"
-  loop: "{{ ansible_facts['mounts'] | default([]) }}"
-  loop_control:
-    label: "{{ item['mount'] }}"
-
-- name: "PVE | Stat tmp.mount unit files"
-  ansible.builtin.stat:
-    path: "{{ item }}"
-  register: __pve_tmp_mount_unit_stats
-  loop: "{{ __pve_tmp_mount_unit_paths }}"
-
-- name: "PVE | Set tmp.mount facts"
-  ansible.builtin.set_fact:
-    __pve_tmp_mount_available: >-
-      {{ __pve_tmp_mount_unit_stats.results | selectattr('stat.exists') | list | length > 0 }}
-    __pve_tmp_mount_masked: >-
-      {{ __pve_tmp_mount_unit_stats.results
-        | selectattr('stat.lnk_target', 'defined')
-        | selectattr('stat.lnk_target', 'equalto', '/dev/null')
-        | list | length > 0 }}

@@ -39,12 +39,6 @@ __pve_install_packages:
   - open-iscsi
   - chrony
 
-__pve_tmp_mount_unit_paths:
-  - /etc/systemd/system/tmp.mount
-  - /run/systemd/system/tmp.mount
-  - /usr/lib/systemd/system/tmp.mount
-  - /lib/systemd/system/tmp.mount
-
 __pve_hardening_absent_packages:
   - nis
   - rsh-client
@@ -102,21 +96,6 @@ __pve_hardening_auditd_rules_path: /etc/audit/rules.d/99-pve-hardening.rules
 __pve_hardening_tmp_acl_paths:
   - /tmp
   - /var/tmp
-
-__pve_hardening_mount_policy:
-  /tmp:
-    options:
-      - nodev
-      - nosuid
-  /var/tmp:
-    options:
-      - nodev
-      - nosuid
-  /dev/shm:
-    options:
-      - nodev
-      - nosuid
-    noexec_var: pve_hardening_dev_shm_noexec
 
 __pve_kernel_cmdline_path: /etc/kernel/cmdline
 __pve_kernel_cmdline_grub_dropin_path: /etc/default/grub.d/10-pve-hardening.cfg

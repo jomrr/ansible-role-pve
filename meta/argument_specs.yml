@@ -88,17 +88,6 @@ argument_specs:
         default: true
         description: Ensure shared temporary directories have root ownership and the sticky
           bit where appropriate.
-      pve_hardening_mounts_enabled:
-        type: bool
-        required: false
-        default: true
-        description: Enable conservative mountpoint hardening for existing safe mountpoints.
-      pve_hardening_dev_shm_noexec:
-        type: bool
-        required: false
-        default: true
-        description: Ensure noexec is part of the /dev/shm mount hardening policy on real
-          hosts.
       pve_cmdline:
         type: dict
         required: false

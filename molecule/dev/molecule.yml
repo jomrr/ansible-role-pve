@@ -33,7 +33,7 @@ verifier:
 scenario:
   name: "dev"
 platforms:
-  - name: debian-13-pve
+  - name: "debian-13-pve"
     image: "docker.io/jomrr/molecule-debian:13"
     pre_build_image: true
     override_command: false
