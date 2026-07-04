@@ -2,19 +2,8 @@
 # role: pve
 # file: tasks/facts.yml
 
-- name: "PVE | Stat no-subscription JavaScript candidates"
-  ansible.builtin.stat:
-    path: "{{ item }}"
-  register: __pve_nag_candidate_stats
-  loop: "{{ __pve_no_subscription_nag_candidate_paths }}"
-
 - name: "PVE | Set base detection facts"
   ansible.builtin.set_fact:
     __pve_is_container: "{{ __pve_virtualization_type in __pve_container_types }}"
-    __pve_no_subscription_nag_target_exists: >-
-      {{ __pve_nag_candidate_stats.results | selectattr('stat.exists') | list | length > 0 }}
-    __pve_no_subscription_nag_target_path: >-
-      {{ (__pve_nag_candidate_stats.results | selectattr('stat.exists') | map(attribute='item') | list | first)
-        | default(__pve_no_subscription_nag_candidate_paths[0]) }}
   vars:
     __pve_virtualization_type: "{{ ansible_facts['virtualization_type'] | default('') }}"

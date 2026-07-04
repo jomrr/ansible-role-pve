@@ -8,14 +8,14 @@
 - name: "PVE | Collect target facts"
   ansible.builtin.import_tasks: facts.yml
 
-- name: "PVE | Manage no-subscription repository and warning suppression"
-  ansible.builtin.import_tasks: no_subscription.yml
+- name: "PVE | Manage no-subscription repository"
+  ansible.builtin.import_tasks: repository.yml
   when: pve_no_subscription | bool
 
 - name: "PVE | Install Proxmox VE"
   ansible.builtin.import_tasks: install.yml
 
-- name: "PVE | Re-apply no-subscription repository and warning suppression"
+- name: "PVE | Apply no-subscription warning suppression"
   ansible.builtin.import_tasks: no_subscription.yml
   when: pve_no_subscription | bool
 

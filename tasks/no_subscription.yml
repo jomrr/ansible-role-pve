@@ -2,52 +2,6 @@
 # role: pve
 # file: tasks/no_subscription.yml
 
-- name: "PVE | Ensure APT source directory exists"
-  ansible.builtin.file:
-    path: "{{ __pve_no_subscription_sources_path | dirname }}"
-    state: directory
-    owner: root
-    group: root
-    mode: "0755"
-
-- name: "PVE | Ensure APT keyring directory exists"
-  ansible.builtin.file:
-    path: "{{ __pve_proxmox_apt_keyring_path | dirname }}"
-    state: directory
-    owner: root
-    group: root
-    mode: "0755"
-
-- name: "PVE | Install Proxmox VE APT keyring"
-  ansible.builtin.get_url:
-    url: "{{ __pve_proxmox_apt_keyrings[ansible_facts.distribution_release].url }}"
-    dest: "{{ __pve_proxmox_apt_keyring_path }}"
-    checksum: "{{ __pve_proxmox_apt_keyrings[ansible_facts.distribution_release].checksum }}"
-    owner: root
-    group: root
-    mode: "0644"
-  when: not __pve_is_container | bool
-
-- name: "PVE | Remove conflicting Proxmox VE repository sources"
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: absent
-  loop: "{{ __pve_conflicting_repository_source_paths }}"
-
-- name: "PVE | Enable Proxmox VE no-subscription repository"
-  ansible.builtin.copy:
-    dest: "{{ __pve_no_subscription_sources_path }}"
-    owner: root
-    group: root
-    mode: "0644"
-    content: |
-      Types: deb
-      URIs: {{ __pve_no_subscription_repository_uri }}
-      Suites: {{ ansible_facts.distribution_release }}
-      Components: {{ __pve_no_subscription_repository_component }}
-      Signed-By: {{ __pve_proxmox_apt_keyring_path }}
-      Enabled: yes
-
 - name: "PVE | Ensure no-subscription script directory exists"
   ansible.builtin.file:
     path: "{{ __pve_no_subscription_nag_script_path | dirname }}"
@@ -80,12 +34,22 @@
     group: root
     mode: "0644"
 
+- name: "PVE | Stat no-subscription JavaScript candidates"
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  register: __pve_no_subscription_nag_candidate_stats
+  loop: "{{ __pve_no_subscription_nag_candidate_paths }}"
+
 - name: "PVE | Run no-subscription warning suppression when PVE files exist"
   ansible.builtin.command:
     argv:
       - "{{ __pve_no_subscription_nag_script_path }}"
   environment:
-    PVE_NAG_FILE: "{{ __pve_no_subscription_nag_target_path }}"
+    PVE_NAG_FILE: "{{ __pve_no_subscription_nag_candidate_path }}"
   register: __pve_no_subscription_run
   changed_when: __pve_no_subscription_run.stdout is search('^patched:')
-  when: __pve_no_subscription_nag_target_exists | bool
+  vars:
+    __pve_no_subscription_nag_existing_paths: >-
+      {{ __pve_no_subscription_nag_candidate_stats.results | selectattr('stat.exists') | map(attribute='item') | list }}
+    __pve_no_subscription_nag_candidate_path: "{{ __pve_no_subscription_nag_existing_paths | first | default('') }}"
+  when: __pve_no_subscription_nag_candidate_path | length > 0
