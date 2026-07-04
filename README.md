@@ -87,6 +87,7 @@ The following variables are part of the public role interface.
 ## Operational Notes
 
 - `pve_no_subscription` enables `/etc/apt/sources.list.d/proxmox.sources` with `ansible_facts.distribution_release` as suite.
+- The role stops before making changes when a Proxmox VE enterprise repository is already active.
 - `pve_no_subscription` disables conflicting Proxmox VE repository files so APT uses the managed deb822 source.
 - Proxmox VE installation follows the Debian package set `proxmox-default-kernel`, `proxmox-ve`, `postfix`, `open-iscsi`, and `chrony`; reboot handling stays outside the role.
 - `pve_ha_services` maps each HA unit to true for unmasked/enabled or false for stopped/disabled/masked.
