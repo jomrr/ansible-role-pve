@@ -31,10 +31,14 @@
       - --print-uris
       - update
   register: __pve_enabled_apt_update_uris
+  check_mode: false
   changed_when: false
   failed_when: false
+  when: pve_no_subscription | bool
 
 - name: "PVE | Fail when Proxmox VE enterprise repository is enabled"
   ansible.builtin.fail:
     msg: "The pve role refuses to run while the Proxmox VE enterprise repository is enabled."
-  when: __pve_enabled_apt_update_uris.stdout is search('enterprise\\.proxmox\\.com/debian/pve.*pve-enterprise')
+  when:
+    - pve_no_subscription | bool
+    - __pve_enabled_apt_update_uris.stdout | default('') is search('enterprise\\.proxmox\\.com/debian/pve.*pve-enterprise')
