@@ -5,5 +5,6 @@
 - name: "Molecule | converge | pve"
   hosts: all
   gather_facts: true
+  become: true
   roles:
     - role: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"

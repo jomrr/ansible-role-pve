@@ -5,7 +5,7 @@
 dependency:
   name: "galaxy"
 driver:
-  name: "podman"
+  name: "default"
 provisioner:
   name: "ansible"
   config_options:
@@ -20,21 +20,37 @@ provisioner:
       pipelining: true
   log: true
   playbooks:
-    converge: "../resources/playbooks/converge.yml"
-    verify: "../resources/playbooks/verify.yml"
+    converge: "converge.yml"
+    verify: "verify.yml"
+    create: "create.yml"
+    destroy: "destroy.yml"
+    prepare: "prepare.yml"
   inventory:
     group_vars:
       all:
         pve_no_subscription: true
         pve_hardening_enabled: true
         pve_hardening_auditd_enabled: true
+    host_vars:
+      molecule-pve-dev:
+        ansible_remote_tmp: "/home/molecule/.ansible/tmp"
 verifier:
   name: "ansible"
 scenario:
+  test_sequence:
+    - "destroy"
+    - "syntax"
+    - "create"
+    - "prepare"
+    - "converge"
+    - "idempotence"
+    - "verify"
+    - "destroy"
+  destroy_sequence:
+    - "destroy"
   name: "dev"
 platforms:
-  - name: "debian-13-pve"
-    image: "docker.io/jomrr/molecule-debian:13"
-    pre_build_image: true
-    override_command: false
-    systemd: true
+  - name: "molecule-pve-dev"
+    libvirt_uri: "qemu:///system"
+    libvirt_network: "default"
+    image_url: "https://cloud.debian.org/images/cloud/trixie/latest/debian-13-genericcloud-amd64.qcow2"

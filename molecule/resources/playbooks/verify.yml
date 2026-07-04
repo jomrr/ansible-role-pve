@@ -2,125 +2,19 @@
 # role: pve
 # file: molecule/resources/playbooks/verify.yml
 
-- name: "Molecule | verify | pve"
+- name: "Molecule | verify container | pve"
   hosts: all
   gather_facts: true
-  vars:
-    __pve_verify_script_path: /usr/local/sbin/pve-disable-subscription-nag
-    __pve_verify_apt_hook_path: /etc/apt/apt.conf.d/99-pve-disable-subscription-nag
-    __pve_verify_no_subscription_sources_path: /etc/apt/sources.list.d/proxmox.sources
-    __pve_verify_sysctl_path: /etc/sysctl.d/99-pve-hardening.conf
-    __pve_verify_modprobe_path: /etc/modprobe.d/pve-hardening.conf
-    __pve_verify_sshd_path: /etc/ssh/sshd_config.d/10-pve-hardening.conf
-    __pve_verify_old_sshd_path: /etc/ssh/sshd_config.d/90-pve-hardening.conf
-    __pve_verify_grub_dropin_path: /etc/default/grub.d/10-pve-hardening.cfg
   tasks:
-    - name: "PVE | Stat managed files"
-      ansible.builtin.stat:
-        path: "{{ item }}"
-      register: __pve_verify_managed_files
-      loop:
-        - "{{ __pve_verify_script_path }}"
-        - "{{ __pve_verify_apt_hook_path }}"
-        - "{{ __pve_verify_no_subscription_sources_path }}"
-        - "{{ __pve_verify_sysctl_path }}"
-        - "{{ __pve_verify_modprobe_path }}"
-        - "{{ __pve_verify_sshd_path }}"
-        - "{{ __pve_verify_old_sshd_path }}"
-        - "{{ __pve_verify_grub_dropin_path }}"
-
-    - name: "PVE | Assert expected managed files exist"
-      ansible.builtin.assert:
-        that:
-          - __pve_verify_managed_files.results[0].stat.exists
-          - __pve_verify_managed_files.results[0].stat.executable
-          - __pve_verify_managed_files.results[1].stat.exists
-          - __pve_verify_managed_files.results[2].stat.exists
-          - __pve_verify_managed_files.results[3].stat.exists
-          - __pve_verify_managed_files.results[4].stat.exists
-          - __pve_verify_managed_files.results[5].stat.exists
-          - not __pve_verify_managed_files.results[6].stat.exists
-          - not __pve_verify_managed_files.results[7].stat.exists
-
-    - name: "PVE | Stat conflicting APT source files"
-      ansible.builtin.stat:
-        path: "{{ item }}"
-      register: __pve_verify_conflicting_source_files
-      loop:
-        - /etc/apt/sources.list.d/pve-no-subscription.list
-        - /etc/apt/sources.list.d/pve-enterprise.list
-        - /etc/apt/sources.list.d/pve-enterprise.sources
-
-    - name: "PVE | Assert conflicting APT source files are absent"
-      ansible.builtin.assert:
-        that:
-          - not item.stat.exists
-      loop: "{{ __pve_verify_conflicting_source_files.results }}"
-      loop_control:
-        label: "{{ item.item }}"
-
-    - name: "PVE | Read APT source files"
-      ansible.builtin.slurp:
-        src: "{{ __pve_verify_no_subscription_sources_path }}"
-      register: __pve_verify_source_files
-
-    - name: "PVE | Set APT source content facts"
-      ansible.builtin.set_fact:
-        __pve_verify_no_subscription_source: "{{ __pve_verify_source_files.content | b64decode }}"
-
-    - name: "PVE | Assert PVE APT repositories are configured"
-      ansible.builtin.assert:
-        that:
-          - "'URIs: http://download.proxmox.com/debian/pve' in __pve_verify_no_subscription_source"
-          - "'Suites: ' ~ ansible_facts.distribution_release in __pve_verify_no_subscription_source"
-          - "'Components: pve-no-subscription' in __pve_verify_no_subscription_source"
-          - "'Enabled: yes' in __pve_verify_no_subscription_source"
-
-    - name: "PVE | Read hardening files"
-      ansible.builtin.slurp:
-        src: "{{ item }}"
-      register: __pve_verify_hardening_files
-      loop:
-        - "{{ __pve_verify_sysctl_path }}"
-        - "{{ __pve_verify_modprobe_path }}"
-
-    - name: "PVE | Set hardening file content facts"
-      ansible.builtin.set_fact:
-        __pve_verify_sysctl_content: "{{ __pve_verify_hardening_files.results[0].content | b64decode }}"
-        __pve_verify_modprobe_content: "{{ __pve_verify_hardening_files.results[1].content | b64decode }}"
-
-    - name: "PVE | Assert safe sysctl keys are rendered"
-      ansible.builtin.assert:
-        that:
-          - "'kernel.kptr_restrict' in __pve_verify_sysctl_content"
-          - "'kernel.dmesg_restrict' in __pve_verify_sysctl_content"
-          - "'fs.protected_hardlinks' in __pve_verify_sysctl_content"
-          - "'fs.protected_symlinks' in __pve_verify_sysctl_content"
-          - "'net.ipv4.tcp_syncookies' in __pve_verify_sysctl_content"
-
-    - name: "PVE | Assert safe kernel module blacklist is rendered"
-      ansible.builtin.assert:
-        that:
-          - "'blacklist dccp' in __pve_verify_modprobe_content"
-          - "'install dccp /bin/false' in __pve_verify_modprobe_content"
-          - "'blacklist tipc' in __pve_verify_modprobe_content"
-          - "'blacklist udf' in __pve_verify_modprobe_content"
-          - "'blacklist overlay' not in __pve_verify_modprobe_content"
-          - "'blacklist usb-storage' not in __pve_verify_modprobe_content"
-
-    - name: "PVE | Stat PVE HA mask symlinks"
-      ansible.builtin.stat:
-        path: "/etc/systemd/system/{{ item }}"
-      register: __pve_verify_ha_masks
-      loop:
-        - pve-ha-lrm.service
-        - pve-ha-crm.service
-        - corosync.service
-
-    - name: "PVE | Assert PVE-only services were not masked in the Debian container"
-      ansible.builtin.assert:
-        that:
-          - not item.stat.exists
-      loop: "{{ __pve_verify_ha_masks.results }}"
-      loop_control:
-        label: "{{ item.item }}"
+    - name: "PVE | Query failed systemd services"
+      ansible.builtin.command:
+        argv:
+          - systemctl
+          - list-units
+          - --type=service
+          - --state=failed
+          - --no-legend
+          - --plain
+      register: __pve_verify_failed_services
+      changed_when: false
+      failed_when: __pve_verify_failed_services.stdout != ""

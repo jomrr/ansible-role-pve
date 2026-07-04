@@ -1,0 +1,70 @@
+---
+# role: pve
+# file: molecule/dev/verify.yml
+
+- name: "Molecule | verify VM | pve"
+  hosts: all
+  gather_facts: true
+  become: true
+  vars:
+    __pve_verify_active_services:
+      - pve-cluster.service
+      - pvedaemon.service
+      - pveproxy.service
+      - pvestatd.service
+    __pve_verify_sysctl_values:
+      kernel.dmesg_restrict: "1"
+      kernel.kptr_restrict: "2"
+      fs.protected_hardlinks: "1"
+      fs.protected_symlinks: "1"
+    __pve_verify_web_url: "https://{{ ansible_host }}:8006/"
+  tasks:
+    - name: "PVE | Query active Proxmox services"
+      ansible.builtin.command:
+        argv:
+          - systemctl
+          - is-active
+          - "{{ item }}"
+      changed_when: false
+      loop: "{{ __pve_verify_active_services }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: "PVE | Query failed systemd services"
+      ansible.builtin.command:
+        argv:
+          - systemctl
+          - list-units
+          - --type=service
+          - --state=failed
+          - --no-legend
+          - --plain
+      register: __pve_verify_failed_services
+      changed_when: false
+      failed_when: __pve_verify_failed_services.stdout is search('(?m)^(pve|proxmox|corosync)')
+
+    - name: "PVE | Query runtime sysctl hardening values"
+      ansible.builtin.command:
+        argv:
+          - sysctl
+          - -n
+          - "{{ item.key }}"
+      register: __pve_verify_sysctl
+      changed_when: false
+      failed_when: __pve_verify_sysctl.stdout != item.value
+      loop: "{{ __pve_verify_sysctl_values | dict2items }}"
+      loop_control:
+        label: "{{ item.key }}"
+
+    - name: "PVE | Check Proxmox web UI"
+      ansible.builtin.uri:
+        url: "{{ __pve_verify_web_url }}"
+        validate_certs: false
+        use_proxy: false
+        timeout: 5
+        status_code: 200
+      register: __pve_verify_web_ui
+      changed_when: false
+      until: __pve_verify_web_ui.status == 200
+      retries: 30
+      delay: 2

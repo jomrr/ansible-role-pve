@@ -29,7 +29,7 @@ This role installs and manages Proxmox VE nodes with a deliberately conservative
 
 - Debian host with a Proxmox VE supported release codename.
 - Root privileges for package, systemd, sysctl, auditd, and configuration-file management.
-- `community.general >=12.0.0` and `ansible.posix >=2.1.0` installed on the controller.
+- `community.general >=12.0.0`, `ansible.posix >=2.1.0`, and `community.libvirt >=2.0.0` installed on the controller.
 
 ## Dependencies
 
@@ -39,6 +39,8 @@ collections:
     version: '>=12.0.0'
   - name: ansible.posix
     version: '>=2.1.0'
+  - name: community.libvirt
+    version: '>=2.0.0'
 ```
 
 ## Role Variables
@@ -67,6 +69,7 @@ The following variables are part of the public role interface.
 - `/usr/local/sbin/pve-disable-subscription-nag` idempotent no-subscription warning suppression script
 - `/etc/apt/apt.conf.d/99-pve-disable-subscription-nag` APT hook that re-applies the suppression script after package operations
 - `/etc/apt/sources.list.d/proxmox.sources` enabled Proxmox VE no-subscription repository in deb822 format
+- `/etc/apt/sources.list.d/pve-enterprise.sources` disabled Proxmox VE enterprise repository in deb822 format
 - `/usr/share/keyrings/proxmox-archive-keyring.gpg` Proxmox VE APT keyring for the target Debian release
 - `/etc/sysctl.d/99-pve-hardening.conf` PVE-safe sysctl hardening values
 - `/etc/modprobe.d/pve-hardening.conf` blacklist for safe unused protocols and uncommon filesystems
@@ -84,9 +87,11 @@ The following variables are part of the public role interface.
 ## Operational Notes
 
 - `pve_no_subscription` enables `/etc/apt/sources.list.d/proxmox.sources` with `ansible_facts.distribution_release` as suite.
-- `pve_no_subscription` removes legacy or conflicting Proxmox VE repository files so APT uses the managed deb822 source.
+- `pve_no_subscription` disables conflicting Proxmox VE repository files so APT uses the managed deb822 source.
 - Proxmox VE installation follows the Debian package set `proxmox-default-kernel`, `proxmox-ve`, `postfix`, `open-iscsi`, and `chrony`; reboot handling stays outside the role.
 - `pve_ha_services` maps each HA unit to true for unmasked/enabled or false for stopped/disabled/masked.
+- Local integration testing uses `molecule test -s dev` with libvirt `qemu:///system` and the `default` NAT network.
+- The local libvirt scenario requires controller-side `libvirt-python`, `qemu-img`, `virsh`, and `genisoimage` or `xorrisofs`.
 - Audit immutable mode and halt-on-full are opt-in and should be tested against recovery procedures before use.
 - Kernel module blacklists affect future loads; reboot or manually unload modules if immediate removal is required.
 - `pve_cmdline` controls kernel command line hardening arguments individually; existing arguments are preserved and cmdline changes require a reboot.

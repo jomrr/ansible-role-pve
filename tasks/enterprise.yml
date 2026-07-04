@@ -1,0 +1,17 @@
+---
+# role: pve
+# file: tasks/enterprise.yml
+
+- name: "PVE | Disable Proxmox VE enterprise repository"
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/pve-enterprise.sources
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      Types: deb
+      URIs: https://enterprise.proxmox.com/debian/pve
+      Suites: {{ ansible_facts.distribution_release }}
+      Components: pve-enterprise
+      Signed-By: {{ __pve_proxmox_apt_keyring_path }}
+      Enabled: no

@@ -1,0 +1,213 @@
+---
+# role: pve
+# file: molecule/dev/create.yml
+
+- name: "Molecule | create | pve"
+  hosts: localhost
+  gather_facts: false
+  vars:
+    __pve_dev_domain_name: "{{ molecule_yml.platforms[0].name | default('molecule-pve-dev') }}"
+    __pve_dev_libvirt_uri: "{{ molecule_yml.platforms[0].libvirt_uri | default('qemu:///system') }}"
+    __pve_dev_network: "{{ molecule_yml.platforms[0].libvirt_network | default('default') }}"
+    __pve_dev_image_url: "{{ molecule_yml.platforms[0].image_url | default('https://cloud.debian.org/images/cloud/trixie/latest/debian-13-genericcloud-amd64.qcow2') }}"
+    __pve_dev_image_cache_dir: >-
+      {{ molecule_yml.platforms[0].image_cache_dir
+        | default(lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') ~ '/.cache/molecule/images') }}
+    __pve_dev_base_image_path: "{{ __pve_dev_image_cache_dir }}/debian-13-genericcloud-amd64.qcow2"
+    __pve_dev_overlay_path: "{{ molecule_ephemeral_directory }}/{{ __pve_dev_domain_name }}.qcow2"
+    __pve_dev_seed_dir: "{{ molecule_ephemeral_directory }}/seed"
+    __pve_dev_seed_iso_path: "{{ molecule_ephemeral_directory }}/{{ __pve_dev_domain_name }}-seed.iso"
+    __pve_dev_ssh_key_path: "{{ molecule_ephemeral_directory }}/{{ __pve_dev_domain_name }}_ed25519"
+    __pve_dev_domain_xml_path: "{{ molecule_ephemeral_directory }}/{{ __pve_dev_domain_name }}.xml"
+  tasks:
+    - name: "PVE | Ensure Debian cloud image cache exists"
+      ansible.builtin.file:
+        path: "{{ __pve_dev_image_cache_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: "PVE | Ensure libvirt can traverse Molecule temp directories"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0711"
+      loop:
+        - "{{ molecule_ephemeral_directory | dirname }}"
+        - "{{ molecule_ephemeral_directory }}"
+
+    - name: "PVE | Download Debian cloud image"
+      ansible.builtin.get_url:
+        url: "{{ __pve_dev_image_url }}"
+        dest: "{{ __pve_dev_base_image_path }}"
+        mode: "0644"
+        force: false
+
+    - name: "PVE | Generate ephemeral SSH keypair"
+      ansible.builtin.command:
+        argv:
+          - ssh-keygen
+          - -t
+          - ed25519
+          - -N
+          - ""
+          - -f
+          - "{{ __pve_dev_ssh_key_path }}"
+        creates: "{{ __pve_dev_ssh_key_path }}"
+
+    - name: "PVE | Ensure cloud-init seed directory exists"
+      ansible.builtin.file:
+        path: "{{ __pve_dev_seed_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: "PVE | Write cloud-init user data"
+      ansible.builtin.copy:
+        dest: "{{ __pve_dev_seed_dir }}/user-data"
+        mode: "0644"
+        content: |
+          #cloud-config
+          package_update: false
+          ssh_pwauth: false
+          users:
+            - name: molecule
+              groups: sudo
+              sudo: ALL=(ALL) NOPASSWD:ALL
+              shell: /bin/bash
+              lock_passwd: true
+              ssh_authorized_keys:
+                - {{ lookup('ansible.builtin.file', __pve_dev_ssh_key_path ~ '.pub') | to_json }}
+          growpart:
+            mode: auto
+            devices:
+              - /
+
+    - name: "PVE | Write cloud-init metadata"
+      ansible.builtin.copy:
+        dest: "{{ __pve_dev_seed_dir }}/meta-data"
+        mode: "0644"
+        content: |
+          instance-id: {{ __pve_dev_domain_name }}
+          local-hostname: {{ __pve_dev_domain_name }}
+
+    - name: "PVE | Check genisoimage availability"
+      ansible.builtin.command:
+        argv:
+          - genisoimage
+          - --version
+      register: __pve_dev_genisoimage
+      changed_when: false
+      failed_when: false
+
+    - name: "PVE | Check xorrisofs availability"
+      ansible.builtin.command:
+        argv:
+          - xorrisofs
+          - --version
+      register: __pve_dev_xorrisofs
+      changed_when: false
+      failed_when: false
+      when: __pve_dev_genisoimage.rc != 0
+
+    - name: "PVE | Assert cloud-init ISO tooling exists"
+      ansible.builtin.assert:
+        that:
+          - __pve_dev_genisoimage.rc == 0 or __pve_dev_xorrisofs.rc == 0
+
+    - name: "PVE | Create cloud-init seed ISO with genisoimage"
+      ansible.builtin.command:
+        argv:
+          - genisoimage
+          - -output
+          - "{{ __pve_dev_seed_iso_path }}"
+          - -volid
+          - cidata
+          - -joliet
+          - -rock
+          - "{{ __pve_dev_seed_dir }}/user-data"
+          - "{{ __pve_dev_seed_dir }}/meta-data"
+        creates: "{{ __pve_dev_seed_iso_path }}"
+      when: __pve_dev_genisoimage.rc == 0
+
+    - name: "PVE | Create cloud-init seed ISO with xorrisofs"
+      ansible.builtin.command:
+        argv:
+          - xorrisofs
+          - -output
+          - "{{ __pve_dev_seed_iso_path }}"
+          - -volid
+          - cidata
+          - -joliet
+          - -rock
+          - "{{ __pve_dev_seed_dir }}/user-data"
+          - "{{ __pve_dev_seed_dir }}/meta-data"
+        creates: "{{ __pve_dev_seed_iso_path }}"
+      when:
+        - __pve_dev_genisoimage.rc != 0
+        - __pve_dev_xorrisofs.rc == 0
+
+    - name: "PVE | Create VM qcow2 overlay"
+      ansible.builtin.command:
+        argv:
+          - qemu-img
+          - create
+          - -f
+          - qcow2
+          - -F
+          - qcow2
+          - -b
+          - "{{ __pve_dev_base_image_path }}"
+          - "{{ __pve_dev_overlay_path }}"
+          - 20G
+        creates: "{{ __pve_dev_overlay_path }}"
+
+    - name: "PVE | Render libvirt domain XML"
+      ansible.builtin.template:
+        src: pve-dev-domain.xml.j2
+        dest: "{{ __pve_dev_domain_xml_path }}"
+        mode: "0644"
+
+    - name: "PVE | Define libvirt domain"
+      community.libvirt.virt:
+        uri: "{{ __pve_dev_libvirt_uri }}"
+        command: define
+        xml: "{{ lookup('ansible.builtin.file', __pve_dev_domain_xml_path) }}"
+
+    - name: "PVE | Start libvirt domain"
+      community.libvirt.virt:
+        uri: "{{ __pve_dev_libvirt_uri }}"
+        name: "{{ __pve_dev_domain_name }}"
+        state: running
+
+    - name: "PVE | Wait for libvirt DHCP lease"
+      ansible.builtin.command:
+        argv:
+          - virsh
+          - -c
+          - "{{ __pve_dev_libvirt_uri }}"
+          - domifaddr
+          - "{{ __pve_dev_domain_name }}"
+          - --source
+          - lease
+      register: __pve_dev_domifaddr
+      changed_when: false
+      until: __pve_dev_domifaddr.stdout is search('[0-9]+(?:\.[0-9]+){3}/[0-9]+')
+      retries: 60
+      delay: 5
+
+    - name: "PVE | Set libvirt domain address fact"
+      ansible.builtin.set_fact:
+        __pve_dev_domain_ipv4: >-
+          {{ __pve_dev_domifaddr.stdout
+            | regex_search('[0-9]+(?:\.[0-9]+){3}/[0-9]+')
+            | regex_replace('/.*$', '') }}
+
+    - name: "PVE | Write Molecule instance config"
+      ansible.builtin.copy:
+        dest: "{{ molecule_instance_config }}"
+        mode: "0600"
+        content: |
+          - instance: "{{ __pve_dev_domain_name }}"
+            address: "{{ __pve_dev_domain_ipv4 }}"
+            user: molecule
+            port: 22
+            identity_file: "{{ __pve_dev_ssh_key_path }}"

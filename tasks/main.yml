@@ -15,6 +15,10 @@
 - name: "PVE | Install Proxmox VE"
   ansible.builtin.import_tasks: install.yml
 
+- name: "PVE | Disable package-created Proxmox VE enterprise repository"
+  ansible.builtin.import_tasks: enterprise.yml
+  when: pve_no_subscription | bool
+
 - name: "PVE | Apply no-subscription warning suppression"
   ansible.builtin.import_tasks: no_subscription.yml
   when: pve_no_subscription | bool

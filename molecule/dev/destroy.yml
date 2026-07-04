@@ -1,0 +1,40 @@
+---
+# role: pve
+# file: molecule/dev/destroy.yml
+
+- name: "Molecule | destroy | pve"
+  hosts: localhost
+  gather_facts: false
+  vars:
+    __pve_dev_domain_name: "{{ molecule_yml.platforms[0].name | default('molecule-pve-dev') }}"
+    __pve_dev_libvirt_uri: "{{ molecule_yml.platforms[0].libvirt_uri | default('qemu:///system') }}"
+  tasks:
+    - name: "PVE | Destroy libvirt domain"
+      ansible.builtin.command:
+        argv:
+          - virsh
+          - -c
+          - "{{ __pve_dev_libvirt_uri }}"
+          - destroy
+          - "{{ __pve_dev_domain_name }}"
+      register: __pve_dev_destroy_domain
+      changed_when: __pve_dev_destroy_domain.rc == 0
+      failed_when: false
+
+    - name: "PVE | Undefine libvirt domain"
+      ansible.builtin.command:
+        argv:
+          - virsh
+          - -c
+          - "{{ __pve_dev_libvirt_uri }}"
+          - undefine
+          - "{{ __pve_dev_domain_name }}"
+      register: __pve_dev_undefine_domain
+      changed_when: __pve_dev_undefine_domain.rc == 0
+      failed_when: false
+
+    - name: "PVE | Clear Molecule instance config"
+      ansible.builtin.copy:
+        dest: "{{ molecule_instance_config }}"
+        mode: "0600"
+        content: "[]\n"

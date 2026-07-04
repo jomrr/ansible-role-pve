@@ -1,0 +1,47 @@
+---
+# role: pve
+# file: molecule/dev/prepare.yml
+
+- name: "Molecule | prepare | pve"
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: "PVE | Wait for SSH connection"
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+
+    - name: "PVE | Ensure Ansible remote temp directory exists"
+      ansible.builtin.raw: install -d -m 1777 /home/molecule/.ansible/tmp
+      changed_when: false
+
+    - name: "PVE | Wait for cloud-init completion"
+      ansible.builtin.command:
+        argv:
+          - cloud-init
+          - status
+          - --wait
+      changed_when: false
+
+    - name: "PVE | Ensure Proxmox node name resolves to libvirt IPv4"
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: '^\S+\s+{{ inventory_hostname }}(\s|$)'
+        line: "{{ ansible_host }} {{ inventory_hostname }}"
+        mode: "0644"
+      become: true
+
+    - name: "PVE | Preseed empty GRUB install devices"
+      ansible.builtin.debconf:
+        name: grub-pc
+        question: grub-pc/install_devices_empty
+        value: "true"
+        vtype: boolean
+      become: true
+
+    - name: "PVE | Preseed GRUB install devices"
+      ansible.builtin.debconf:
+        name: grub-pc
+        question: grub-pc/install_devices
+        value: ""
+        vtype: multiselect
+      become: true

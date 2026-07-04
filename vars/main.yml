@@ -9,7 +9,6 @@ __pve_no_subscription_sources_path: /etc/apt/sources.list.d/proxmox.sources
 __pve_conflicting_repository_source_paths:
   - /etc/apt/sources.list.d/pve-no-subscription.list
   - /etc/apt/sources.list.d/pve-enterprise.list
-  - /etc/apt/sources.list.d/pve-enterprise.sources
 __pve_proxmox_apt_keyring_path: /usr/share/keyrings/proxmox-archive-keyring.gpg
 __pve_proxmox_apt_keyrings:
   bookworm:

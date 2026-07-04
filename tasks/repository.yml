@@ -28,11 +28,14 @@
     mode: "0644"
   when: not __pve_is_container | bool
 
-- name: "PVE | Remove conflicting Proxmox VE repository sources"
+- name: "PVE | Remove conflicting Proxmox VE repository list sources"
   ansible.builtin.file:
     path: "{{ item }}"
     state: absent
   loop: "{{ __pve_conflicting_repository_source_paths }}"
+
+- name: "PVE | Disable Proxmox VE enterprise repository"
+  ansible.builtin.import_tasks: enterprise.yml
 
 - name: "PVE | Enable Proxmox VE no-subscription repository"
   ansible.builtin.copy:
