@@ -2,11 +2,11 @@
 # role: pve
 # file: tasks/main.yml
 
-- name: "PVE | Validate role inputs"
-  ansible.builtin.import_tasks: assert.yml
-
 - name: "PVE | Collect target facts"
   ansible.builtin.import_tasks: facts.yml
+
+- name: "PVE | Validate role inputs"
+  ansible.builtin.import_tasks: assert.yml
 
 - name: "PVE | Manage no-subscription repository"
   ansible.builtin.import_tasks: repository.yml

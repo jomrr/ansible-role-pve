@@ -38,6 +38,17 @@
   listen: pve reload systemd
   when: not __pve_is_container | default(false) | bool
 
+- name: "PVE | Reboot into Proxmox VE kernel"
+  ansible.builtin.reboot:
+    reboot_timeout: 900
+  listen: pve reboot into proxmox kernel
+  when: not __pve_is_container | default(false) | bool
+
+- name: "PVE | Refresh facts after Proxmox VE kernel reboot"
+  ansible.builtin.setup:
+  listen: pve refresh facts after proxmox kernel reboot
+  when: not __pve_is_container | default(false) | bool
+
 - name: "PVE | Refresh proxmox boot entries"
   ansible.builtin.command:
     argv:

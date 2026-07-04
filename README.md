@@ -28,6 +28,7 @@ This role installs and manages Proxmox VE nodes with a deliberately conservative
 ## Requirements
 
 - Debian host with a Proxmox VE supported release codename.
+- Hostname resolution that returns at least one non-loopback IP address for `hostname --ip-address`.
 - Root privileges for package, systemd, sysctl, auditd, and configuration-file management.
 - `community.general >=12.0.0`, `ansible.posix >=2.1.0`, and `community.libvirt >=2.0.0` installed on the controller.
 
@@ -80,6 +81,7 @@ The following variables are part of the public role interface.
 
 - Defaults are availability-preserving and avoid root lockout, audit halt-on-full, default SSH forwarding disablement, OverlayFS disablement, USB-storage disablement, and broad firewall policy changes.
 - The role requires `ansible_facts.distribution` to be Debian; Debian-family derivatives are not accepted as PVE installation targets.
+- Non-container targets must resolve their hostname to a non-loopback address. The role fails early if `hostname --ip-address` returns `127.0.1.1`, `127.0.0.1`, or `::1`.
 - Proxmox VE package installation is skipped in containers so CI can verify configuration behavior without turning a container into a PVE host.
 - The hardening controls avoid sysctl values known to interfere with PVE bridges, forwarding, cluster traffic, KVM, or LXC.
 - `pve_cmdline` arguments are enabled by default. Disable arguments such as `module.sig_enforce=1` or `lockdown=integrity` explicitly if they conflict with unsigned DKMS or third-party modules.
@@ -89,7 +91,9 @@ The following variables are part of the public role interface.
 - `pve_no_subscription` enables `/etc/apt/sources.list.d/proxmox.sources` with `ansible_facts.distribution_release` as suite.
 - `pve_no_subscription` stops before making changes when the Proxmox VE enterprise repository is enabled.
 - `pve_no_subscription` disables conflicting Proxmox VE repository files so APT uses the managed deb822 source.
-- Proxmox VE installation follows the Debian package set `proxmox-default-kernel`, `proxmox-ve`, `postfix`, `open-iscsi`, and `chrony`; reboot handling stays outside the role.
+- Proxmox VE installation follows the official Debian sequence: install `proxmox-default-kernel`, reboot into the PVE kernel, then install `proxmox-ve`, `postfix`, `open-iscsi`, and `chrony`.
+- Postfix is preseeded as `Local only` with the host FQDN as mailname before the Proxmox VE package set is installed.
+- After Proxmox VE is installed, the role removes Debian kernel packages and `os-prober`, then updates GRUB.
 - `pve_ha_services` maps each HA unit to true for unmasked/enabled or false for stopped/disabled/masked.
 - Local integration testing uses `molecule test -s dev` with libvirt `qemu:///system` and the `default` NAT network.
 - The local libvirt scenario requires controller-side `libvirt-python`, `qemu-img`, `virsh`, and `genisoimage` or `xorrisofs`.

@@ -31,12 +31,29 @@ __pve_container_types:
   - podman
   - systemd-nspawn
 
-__pve_install_packages:
+__pve_loopback_ip_pattern: '^(127\.|::1$)'
+
+__pve_install_kernel_packages:
   - proxmox-default-kernel
+
+__pve_install_packages:
   - proxmox-ve
   - postfix
   - open-iscsi
   - chrony
+
+__pve_debian_kernel_absent_packages:
+  bookworm:
+    - linux-image-amd64
+    - linux-image-cloud-amd64
+    - linux-image-6.1*
+  trixie:
+    - linux-image-amd64
+    - linux-image-cloud-amd64
+    - linux-image-6.12*
+
+__pve_boot_absent_packages:
+  - os-prober
 
 __pve_hardening_absent_packages:
   - nis
