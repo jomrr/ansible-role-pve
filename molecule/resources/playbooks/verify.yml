@@ -5,7 +5,32 @@
 - name: "Molecule | verify container | pve"
   hosts: all
   gather_facts: true
+  become: true
   tasks:
+    - name: "PVE | Stat managed APT repository files"
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: __pve_verify_repository_files
+      loop:
+        - /etc/apt/sources.list.d/proxmox.sources
+        - /usr/share/keyrings/proxmox-archive-keyring-trixie.gpg
+
+    - name: "PVE | Assert managed APT repository files exist"
+      ansible.builtin.assert:
+        that:
+          - __pve_verify_repository_file.stat.exists
+      loop: "{{ __pve_verify_repository_files.results }}"
+      loop_control:
+        label: "{{ __pve_verify_repository_file.item }}"
+        loop_var: __pve_verify_repository_file
+
+    - name: "PVE | Update APT cache"
+      ansible.builtin.command:
+        argv:
+          - apt-get
+          - update
+      changed_when: false
+
     - name: "PVE | Query failed systemd services"
       ansible.builtin.command:
         argv:
