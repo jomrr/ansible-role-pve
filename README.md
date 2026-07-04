@@ -71,7 +71,8 @@ The following variables are part of the public role interface.
 - `/etc/apt/apt.conf.d/99-pve-disable-subscription-nag` APT hook that re-applies the suppression script after package operations
 - `/etc/apt/sources.list.d/proxmox.sources` enabled Proxmox VE no-subscription repository in deb822 format
 - `/etc/apt/sources.list.d/pve-enterprise.sources` disabled Proxmox VE enterprise repository in deb822 format
-- `/usr/share/keyrings/proxmox-archive-keyring.gpg` Proxmox VE APT keyring for the target Debian release
+- `/usr/share/keyrings/proxmox-release-bookworm.gpg` Proxmox VE APT keyring for Debian 12 Bookworm
+- `/usr/share/keyrings/proxmox-archive-keyring-trixie.gpg` Proxmox VE APT keyring for Debian 13 Trixie
 - `/etc/sysctl.d/99-pve-hardening.conf` PVE-safe sysctl hardening values
 - `/etc/modprobe.d/pve-hardening.conf` blacklist for safe unused protocols and uncommon filesystems
 - `/etc/ssh/sshd_config.d/10-pve-hardening.conf` small sshd drop-in when sshd management is enabled
