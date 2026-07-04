@@ -7,27 +7,54 @@
     path: "{{ __pve_kernel_cmdline_path }}"
   register: __pve_kernel_cmdline_file
 
+- name: "PVE | Build enabled kernel command line arguments"
+  ansible.builtin.set_fact:
+    __pve_kernel_cmdline_args: >-
+      {{
+        pve_cmdline
+        | dict2items
+        | selectattr('value')
+        | map(attribute='key')
+        | list
+      }}
+
+- name: "PVE | Remove Intel-only kernel command line arguments on non-Intel CPUs"
+  ansible.builtin.set_fact:
+    __pve_kernel_cmdline_args: "{{ __pve_kernel_cmdline_args | reject('in', __pve_kernel_cmdline_intel_only_args) | list }}"
+  when: "'intel' not in (ansible_facts['processor'] | default([]) | join(' ') | lower)"
+
+- name: "PVE | Remove AMD-only kernel command line arguments on non-AMD CPUs"
+  ansible.builtin.set_fact:
+    __pve_kernel_cmdline_args: "{{ __pve_kernel_cmdline_args | reject('in', __pve_kernel_cmdline_amd_only_args) | list }}"
+  when: "'amd' not in (ansible_facts['processor'] | default([]) | join(' ') | lower)"
+
 - name: "PVE | Manage proxmox kernel command line arguments"
   when: __pve_kernel_cmdline_file.stat.exists | bool
   block:
-    - name: "PVE | Add proxmox kernel command line arguments"
-      ansible.builtin.lineinfile:
+    - name: "PVE | Fail when proxmox kernel command line is empty"
+      ansible.builtin.fail:
+        msg: >-
+          {{ __pve_kernel_cmdline_path }} exists but contains no kernel command line. Fix the proxmox-boot-tool
+          setup before applying PVE kernel command line hardening.
+      when: __pve_kernel_cmdline_file.stat.size | int <= 1
+
+    - name: "PVE | Add proxmox kernel command line key-value arguments"
+      ansible.builtin.replace:
         path: "{{ __pve_kernel_cmdline_path }}"
-        create: false
-        regexp: '^(?!.*(?:^|\s){{ item.key | regex_escape }}(?:\s|$))(.*)$'
-        line: '\1 {{ item.key }}'
-        backrefs: true
-        owner: root
-        group: root
-        mode: "0644"
+        regexp: '^((?=.*\S)(?!.*(?:^|\s){{ item.split("=")[0] | regex_escape }}=).*)$'
+        replace: '\1 {{ item }}'
       notify: pve refresh proxmox boot
-      loop: "{{ pve_cmdline | default({}) | dict2items }}"
-      when:
-        - item.value | bool
-        - item.key not in __pve_kernel_cmdline_intel_only_args
-          or 'intel' in (ansible_facts['processor'] | default([]) | join(' ') | lower)
-        - item.key not in __pve_kernel_cmdline_amd_only_args
-          or 'amd' in (ansible_facts['processor'] | default([]) | join(' ') | lower)
+      loop: "{{ __pve_kernel_cmdline_args }}"
+      when: "'=' in item"
+
+    - name: "PVE | Add proxmox kernel command line flag arguments"
+      ansible.builtin.replace:
+        path: "{{ __pve_kernel_cmdline_path }}"
+        regexp: '^((?=.*\S)(?!.*(?:^|\s){{ item | regex_escape }}(?:\s|$)).*)$'
+        replace: '\1 {{ item }}'
+      notify: pve refresh proxmox boot
+      loop: "{{ __pve_kernel_cmdline_args }}"
+      when: "'=' not in item"
 
 - name: "PVE | Manage GRUB kernel command line fallback"
   when: not __pve_kernel_cmdline_file.stat.exists | bool
@@ -40,30 +67,11 @@
         group: root
         mode: "0755"
 
-    - name: "PVE | Add GRUB kernel command line drop-in header"
-      ansible.builtin.lineinfile:
-        path: "{{ __pve_kernel_cmdline_grub_dropin_path }}"
-        create: true
-        insertbefore: BOF
-        line: "# Ansible managed: PVE kernel command line hardening."
-        owner: root
-        group: root
-        mode: "0644"
-
-    - name: "PVE | Add GRUB kernel command line arguments"
-      ansible.builtin.lineinfile:
-        path: "{{ __pve_kernel_cmdline_grub_dropin_path }}"
-        create: true
-        regexp: '^GRUB_CMDLINE_LINUX_DEFAULT="\$\{GRUB_CMDLINE_LINUX_DEFAULT:\+\$GRUB_CMDLINE_LINUX_DEFAULT \}{{ item.key | regex_escape }}"$'
-        line: 'GRUB_CMDLINE_LINUX_DEFAULT="${GRUB_CMDLINE_LINUX_DEFAULT:+$GRUB_CMDLINE_LINUX_DEFAULT }{{ item.key }}"'
+    - name: "PVE | Install GRUB kernel command line drop-in"
+      ansible.builtin.template:
+        src: grub-pve-hardening.cfg.j2
+        dest: "{{ __pve_kernel_cmdline_grub_dropin_path }}"
         owner: root
         group: root
         mode: "0644"
       notify: pve update grub
-      loop: "{{ pve_cmdline | default({}) | dict2items }}"
-      when:
-        - item.value | bool
-        - item.key not in __pve_kernel_cmdline_intel_only_args
-          or 'intel' in (ansible_facts['processor'] | default([]) | join(' ') | lower)
-        - item.key not in __pve_kernel_cmdline_amd_only_args
-          or 'amd' in (ansible_facts['processor'] | default([]) | join(' ') | lower)
