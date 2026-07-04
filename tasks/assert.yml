@@ -2,32 +2,6 @@
 # role: pve
 # file: tasks/assert.yml
 
-- name: "PVE | Detect active Proxmox VE enterprise deb822 repository"
-  ansible.builtin.command:
-    argv:
-      - awk
-      - |
-        /^[[:space:]]*URIs:[[:space:]]/ && /enterprise\.proxmox\.com\/debian\/pve/ { uri = 1 }
-        /^[[:space:]]*Components:[[:space:]]/ && /(^|[[:space:]])pve-enterprise([[:space:]]|$)/ { component = 1 }
-        /^[[:space:]]*Enabled:[[:space:]]*no[[:space:]]*$/ { disabled = 1 }
-        END { exit uri && component && !disabled ? 0 : 1 }
-      - /etc/apt/sources.list.d/pve-enterprise.sources
-  register: __pve_active_enterprise_deb822_repository
-  changed_when: false
-  failed_when: false
-
-- name: "PVE | Detect active Proxmox VE enterprise list repository"
-  ansible.builtin.command:
-    argv:
-      - awk
-      - |
-        /^[[:space:]]*deb[[:space:]]/ && /enterprise\.proxmox\.com\/debian\/pve/ && /[[:space:]]pve-enterprise([[:space:]]|$)/ { found = 1 }
-        END { exit found ? 0 : 1 }
-      - /etc/apt/sources.list.d/pve-enterprise.list
-  register: __pve_active_enterprise_list_repository
-  changed_when: false
-  failed_when: false
-
 - name: "PVE | Assert supported inputs"
   ansible.builtin.assert:
     that:
@@ -35,12 +9,9 @@
       - ansible_facts.distribution_release | default('') in __pve_proxmox_apt_keyrings
       - (pve_ha_services | default({}) | dict2items | map(attribute='key') | difference(__pve_allowed_ha_services) | length) == 0
       - pve_hardening_sshd_permit_root_login in __pve_sshd_permit_root_login_values
-      - __pve_active_enterprise_deb822_repository.rc != 0
-      - __pve_active_enterprise_list_repository.rc != 0
     fail_msg: >-
       The pve role supports targets with ansible_facts.distribution set to Debian, a supported Debian release codename,
-      the configured sshd PermitRootLogin values, only the explicitly allowed PVE HA services, and no already active
-      Proxmox VE enterprise repository.
+      the configured sshd PermitRootLogin values, and only the explicitly allowed PVE HA services.
   vars:
     __pve_allowed_ha_services:
       - pve-ha-lrm.service
@@ -52,3 +23,18 @@
       - forced-commands-only
       - "no"
       - without-password
+
+- name: "PVE | Query enabled APT update URIs"
+  ansible.builtin.command:
+    argv:
+      - apt-get
+      - --print-uris
+      - update
+  register: __pve_enabled_apt_update_uris
+  changed_when: false
+  failed_when: false
+
+- name: "PVE | Fail when Proxmox VE enterprise repository is enabled"
+  ansible.builtin.fail:
+    msg: "The pve role refuses to run while the Proxmox VE enterprise repository is enabled."
+  when: __pve_enabled_apt_update_uris.stdout is search('enterprise\\.proxmox\\.com/debian/pve.*pve-enterprise')

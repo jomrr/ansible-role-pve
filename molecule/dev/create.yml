@@ -35,12 +35,18 @@
         - "{{ molecule_ephemeral_directory | dirname }}"
         - "{{ molecule_ephemeral_directory }}"
 
+    - name: "PVE | Stat Debian cloud image"
+      ansible.builtin.stat:
+        path: "{{ __pve_dev_base_image_path }}"
+      register: __pve_dev_base_image
+
     - name: "PVE | Download Debian cloud image"
       ansible.builtin.get_url:
         url: "{{ __pve_dev_image_url }}"
         dest: "{{ __pve_dev_base_image_path }}"
         mode: "0644"
         force: false
+      when: not __pve_dev_base_image.stat.exists
 
     - name: "PVE | Generate ephemeral SSH keypair"
       ansible.builtin.command:
