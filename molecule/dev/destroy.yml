@@ -8,6 +8,7 @@
   vars:
     __pve_dev_domain_name: "{{ molecule_yml.platforms[0].name | default('molecule-pve-dev') }}"
     __pve_dev_libvirt_uri: "{{ molecule_yml.platforms[0].libvirt_uri | default('qemu:///system') }}"
+    __pve_dev_overlay_path: "{{ molecule_ephemeral_directory }}/{{ __pve_dev_domain_name }}.qcow2"
   tasks:
     - name: "PVE | Destroy libvirt domain"
       ansible.builtin.command:
@@ -32,6 +33,11 @@
       register: __pve_dev_undefine_domain
       changed_when: __pve_dev_undefine_domain.rc == 0
       failed_when: false
+
+    - name: "PVE | Remove libvirt overlay image"
+      ansible.builtin.file:
+        path: "{{ __pve_dev_overlay_path }}"
+        state: absent
 
     - name: "PVE | Clear Molecule instance config"
       ansible.builtin.copy:
