@@ -27,6 +27,16 @@ argument_specs:
           corosync.service: false
         description: Map of Proxmox VE HA systemd units to booleans. True unmasks and enables
           a unit; false stops, disables, and masks it.
+        options:
+          pve-ha-lrm.service:
+            type: bool
+            required: false
+          pve-ha-crm.service:
+            type: bool
+            required: false
+          corosync.service:
+            type: bool
+            required: false
       pve_hardening_enabled:
         type: bool
         required: false
@@ -113,3 +123,58 @@ argument_specs:
         description: Map of kernel command line arguments to booleans. Enabled arguments
           are added while existing arguments are preserved; Intel and AMD arguments are
           applied only on matching CPU vendors. Kernel command line changes require a reboot.
+        options:
+          mitigations=auto:
+            type: bool
+            required: false
+          debugfs=off:
+            type: bool
+            required: false
+          init_on_alloc=1:
+            type: bool
+            required: false
+          init_on_free=1:
+            type: bool
+            required: false
+          kexec_load_disabled=1:
+            type: bool
+            required: false
+          lockdown=integrity:
+            type: bool
+            required: false
+          module.sig_enforce=1:
+            type: bool
+            required: false
+          page_alloc.shuffle=1:
+            type: bool
+            required: false
+          pti=on:
+            type: bool
+            required: false
+          randomize_kstack_offset=on:
+            type: bool
+            required: false
+          slab_nomerge:
+            type: bool
+            required: false
+          spec_store_bypass_disable=on:
+            type: bool
+            required: false
+          vsyscall=none:
+            type: bool
+            required: false
+          efi=disable_early_pci_dma:
+            type: bool
+            required: false
+          iommu=force:
+            type: bool
+            required: false
+          iommu.strict=1:
+            type: bool
+            required: false
+          intel_iommu=on:
+            type: bool
+            required: false
+          amd_iommu=force_isolation:
+            type: bool
+            required: false
